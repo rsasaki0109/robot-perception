@@ -97,6 +97,34 @@ median error against the truth's velocity.
   that look like people end-on. This is the same conclusion as on CODa
   (`docs/evaluation.md`): detection, not association, has the most headroom.
 
+## Closed loop on a Go2
+
+The tasks above score tracks. Robot Native Engine's
+[example 151](https://github.com/rsasaki0109/RobotNativeEngine/tree/main/examples/151_go2_people)
+scores what a robot does with them instead. A Go2 sees people only through
+its Mid-360. It follows a person, yields to people crossing, and passes
+people in a corridor. The `stream` command runs inside its control loop, one
+`lidar_batch` in and one `lidar_frame` out per 0.1 s scan, at about 0.1 ms
+per frame:
+
+```bash
+cargo run --release -p go2_people --example 151_go2_people -- --out target/go2_people --tracker \
+    /path/to/robot-perception stream --setup target/go2_people/stream_setup.json \
+    --max-association-distance-m 1.0 --recent-track-window-ns 0
+```
+
+Following and crossing succeed with every source. In the corridor:
+
+| perception | contacts | closest approach |
+| --- | --- | --- |
+| truth | 0 | 0.77 m |
+| robot-perception | 1 | 0.52 m |
+| greedy nearest neighbour | 2 | 0.38 m |
+
+The trackers report 3.6–4.2 tracks per frame where about one person is
+present, because wall pieces pass the simple person test. False detections,
+more than association, decide the outcome.
+
 ## Camera and VLM
 
 With `--camera`, the tasks also come with a CPU-rendered forward camera
