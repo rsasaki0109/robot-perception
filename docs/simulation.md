@@ -113,14 +113,13 @@ cargo run --release -p go2_people --example 151_go2_people -- --out target/go2_p
     --max-association-distance-m 1.0 --recent-track-window-ns 0
 ```
 
-Following and crossing succeed with every source. In the corridor:
-
 Eight trials per task (each person starting up to 2 s earlier or later),
 runs with a contact out of 8:
 
 | perception | follow | crossing | corridor | furnished room |
 | --- | --- | --- | --- | --- |
 | truth | 0 | 0 | 0 | 0 |
+| truth + SLAM | 0 | 0 | 0 | 0 |
 | robot-perception | 0 | 0 | 4 | 2 |
 | robot-perception + static map | 0 | 0 | 2 | 0 |
 | robot-perception + static map + SLAM | 0 | 0 | 2 | 3 |
@@ -131,8 +130,11 @@ robot-perception is on the wrong person 6 % of the time when following,
 against 12 % for the greedy tracker. Wall pieces and furniture pass the
 simple person test and become phantom people. A static map built online from
 the robot's own scans removes most of them. SLAM localizes the robot to 4 cm
-in the furnished room but does not yet make it safer there; see the example's
-write-up.
+in the furnished room, but there 3 of 8 runs touch someone. With perfect
+perception, the SLAM-localized robot touches nobody, so those contacts come
+from perceiving in the SLAM frame, not from the path. A dynamic-window
+controller removes the corridor contacts but falls there in 13 of 48 runs and comes too
+close in the room; see the example's write-up.
 
 ## Camera and VLM
 
