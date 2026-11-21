@@ -86,6 +86,16 @@ they are clean (held-out). The detector was trained on most of these scans,
 so absolute numbers are optimistic for every tracker. Details:
 [`docs/evaluation.md`](docs/evaluation.md).
 
+### Simulated perception tasks
+
+Nine simulated scenes, each testing one difficulty: crowds, occlusion,
+manoeuvres, ego motion, ego-pose noise, mixed traffic, long range and people
+walking side by side. Each is scanned by a 16-channel LiDAR in
+[Robot Native Engine](https://github.com/rsasaki0109/RobotNativeEngine) and
+scored against exact truth. For example, with jittering ego poses, pose
+correction raises IDF1 from 0.902 to 0.980. Per-task tables:
+[`docs/simulation.md`](docs/simulation.md).
+
 ## How it works
 
 Per LiDAR scan (details: [`docs/algorithms.md`](docs/algorithms.md),
@@ -143,7 +153,7 @@ SDK), [`ros2/`](ros2/robo_perception_ros) (ROS 2 node), [live browser demo](http
 - [`docs/usage.md`](docs/usage.md): CLI, Rust API, input/output, algorithm overview
 - [`docs/architecture.md`](docs/architecture.md): design, scope, assumptions, limitations, references
 - [`docs/algorithms.md`](docs/algorithms.md), [`docs/data-format.md`](docs/data-format.md), [`docs/camera-lidar.md`](docs/camera-lidar.md)
-- [`docs/datasets.md`](docs/datasets.md), [`docs/evaluation.md`](docs/evaluation.md), [`docs/detector_training.md`](docs/detector_training.md)
+- [`docs/datasets.md`](docs/datasets.md), [`docs/evaluation.md`](docs/evaluation.md), [`docs/simulation.md`](docs/simulation.md), [`docs/detector_training.md`](docs/detector_training.md)
 - [`ROADMAP.md`](ROADMAP.md)
 
 ## License
