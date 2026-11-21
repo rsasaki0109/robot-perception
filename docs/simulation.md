@@ -97,13 +97,21 @@ median error against the truth's velocity.
   that look like people end-on. This is the same conclusion as on CODa
   (`docs/evaluation.md`): detection, not association, has the most headroom.
 
+## Camera and VLM
+
+With `--camera`, the tasks also come with a CPU-rendered forward camera
+and exact 2D truth. Florence-2 (a pretrained VLM, on CPU) detects people,
+cars and cyclists in those frames, and its detections feed the tracker's
+camera-assisted mode. A small chat VLM answers scene questions. Results and
+what limits them: [`docs/vlm.md`](vlm.md).
+
 ## Limits
 
 - People are rigid capsules: no limbs or gait.
 - Movers pass through each other.
 - Scans are instantaneous.
 - The ground is flat and known.
-- There is no camera, so camera-LiDAR fusion and appearance cues are not
-  covered.
+- Camera people are one mesh in a fixed standing pose, so appearance cues
+  (re-identification) are not covered.
 - Scores depend on the simple detector. They compare tracker settings on the
   same detections; they are not absolute performance.
