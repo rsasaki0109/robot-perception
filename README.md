@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="assets/compare_ab3dmot.gif" alt="Side-by-side bird's-eye views of the same 16 s of CODa sequence 20 with velocity arrows: an AB3DMOT-style tracker (left) makes 25 identity switches with a median velocity error of 0.17 m/s, factor-tracker with 0.5 s smoothing (right) makes 6 with 0.13 m/s" width="100%">
+  <img src="assets/compare_ab3dmot.gif" alt="Side-by-side bird's-eye views of the same 16 s of CODa sequence 20 with velocity arrows: an AB3DMOT-style tracker (left) makes 25 identity switches with a median velocity error of 0.17 m/s, robo-perception with 0.5 s smoothing (right) makes 6 with 0.13 m/s" width="100%">
 </p>
 
-<h1 align="center">Factor Graph Object Tracker</h1>
+<h1 align="center">Robo Perception</h1>
 
-<p align="center"><code>factor-tracker</code></p>
+<p align="center"><code>robo-perception</code></p>
 
 <p align="center">
-  <a href="https://github.com/rsasaki0109/factor-tracker/actions/workflows/ci.yml"><img src="https://github.com/rsasaki0109/factor-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/rsasaki0109/robo-perception/actions/workflows/ci.yml"><img src="https://github.com/rsasaki0109/robo-perception/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="#license"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg" alt="License: MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/MSRV-1.89-orange.svg" alt="MSRV 1.89">
   <img src="https://img.shields.io/badge/dependencies-nalgebra%20%7C%20thiserror-informational.svg" alt="Dependencies: nalgebra, thiserror">
@@ -15,14 +15,15 @@
 
 <p align="center"><em>Same detector, two trackers, each at its best setting on dev (CODa seq 20, 16 s). Red rings: identity switches against CODa's labels. Arrows: estimated velocity, 2 s ahead; grey: from the labels.</em></p>
 
-Multi-object tracking for robots in Rust: detections from any 3D detector in,
+Perception for robots in Rust, starting with multi-object tracking
+(formerly `factor-tracker`): detections from any 3D detector in,
 people (or other objects) with stable IDs, position, velocity and covariance
 out. Kalman filtering and assignment per scan, with fixed-lag factor-graph
 smoothing and ego-pose correction on top. CPU-only; the core library has
 two dependencies (`nalgebra`, `thiserror`). A ROS 2 node and a
-[browser demo](https://rsasaki0109.github.io/factor-tracker/) are included.
+[browser demo](https://rsasaki0109.github.io/robo-perception/) are included.
 
-## Why factor-tracker
+## Why robo-perception
 
 Measured with the same detections for every tracker (tables below):
 
@@ -50,14 +51,14 @@ Measured with the same detections for every tracker (tables below):
 
 Pedestrians on the nuScenes validation split with the MEGVII detections
 (nuScenes' official tracking baseline input), scored by the official devkit.
-factor-tracker's settings were chosen on half of the scenes and the other
+robo-perception's settings were chosen on half of the scenes and the other
 half scored once; Chiu et al. ran with their published setting.
 
 | tracker | held-out half AMOTA | AMOTP (m) | recall | MOTA | ID switches | whole split AMOTA |
 | --- | --- | --- | --- | --- | --- | --- |
 | AB3DMOT (official baseline results) | 0.109 | 1.738 | 0.242 | 0.135 | 448 | 0.094 |
 | Chiu et al. (challenge winner, NeurIPS 2019) | 0.721 | 0.570 | 0.780 | 0.622 | 143 | 0.754 |
-| **factor-tracker** | **0.768** | **0.417** | **0.804** | **0.643** | **124** | **0.798** |
+| **robo-perception** | **0.768** | **0.417** | **0.804** | **0.643** | **124** | **0.798** |
 
 The detections' velocities are used as measurements (`--velocity-std`).
 Reproduction and the tuning steps: [`docs/evaluation.md`](docs/evaluation.md).
@@ -72,11 +73,11 @@ labels.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Kalman + Mahalanobis gate | 0.1, >= 0.4 | 0.600 | 0.722 | 1151 | 0.224 | 0.745 | 0.888 | 22 | 0.129 |
 | AB3DMOT-style | 0.1, >= 0.4 | 0.618 | 0.746 | 987 | 0.227 | 0.764 | 0.882 | 28 | 0.133 |
-| factor-tracker | 0.3, >= 0.5 | 0.628 | 0.772 | 773 | 0.218 | 0.777 | 0.902 | **18** | 0.129 |
+| robo-perception | 0.3, >= 0.5 | 0.628 | 0.772 | 773 | 0.218 | 0.777 | 0.902 | **18** | 0.129 |
 | + 0.5 s smoothing | 0.3, >= 0.5 | 0.638 | 0.773 | 767 | 0.155 | **0.782** | 0.905 | **18** | **0.099** |
 | **+ 0.5 s smoothing + pose correction** | 0.3, >= 0.5 | **0.640** | **0.793** | **562** | **0.153** | 0.774 | **0.908** | **18** | 0.102 |
 
-factor-tracker runs with distance association and no new track within 0.8 m
+robo-perception runs with distance association and no new track within 0.8 m
 of a confirmed one, which absorbs the duplicate boxes of the looser NMS.
 Each tracker uses the detection setting that is best for it on dev (5
 windows); held-out (3 windows) was scored once per setting. Pose correction
@@ -117,24 +118,24 @@ flowchart TD
 ## Demos
 
 <p align="center">
-  <img src="assets/hero.gif" alt="factor-tracker on a Clearpath Husky robot driving through a campus crowd (CODa sequence 20): camera frames with projected 3D track boxes (left), Ouster OS1-128 scan with pedestrian tracks in a bird's-eye view (right)" width="100%">
+  <img src="assets/hero.gif" alt="robo-perception on a Clearpath Husky robot driving through a campus crowd (CODa sequence 20): camera frames with projected 3D track boxes (left), Ouster OS1-128 scan with pedestrian tracks in a bird's-eye view (right)" width="100%">
 </p>
 <p align="center"><em>Camera + LiDAR on a wheeled robot (CODa seq 20, Ouster OS1-128).</em></p>
 
 <p align="center">
-  <img src="assets/hero_mid360.gif" alt="factor-tracker on GrandTour ETH-2: ANYmal quadruped with a Livox Mid-360 and a front camera among people in the ETH main hall" width="100%">
+  <img src="assets/hero_mid360.gif" alt="robo-perception on GrandTour ETH-2: ANYmal quadruped with a Livox Mid-360 and a front camera among people in the ETH main hall" width="100%">
 </p>
 <p align="center"><em>Livox Mid-360 + camera on a quadruped (GrandTour ETH-2); see <a href="docs/mid360.md"><code>docs/mid360.md</code></a>.</em></p>
 
 ## Quick start
 
 ```sh
-cargo run -p factor-tracker -- demo --out-dir demo-out        # synthetic 2D/3D tracking + HTML views
-cargo run -p factor-tracker -- cam-demo --out-dir cam-out     # camera + LiDAR pipeline + report
+cargo run -p robo-perception -- demo --out-dir demo-out        # synthetic 2D/3D tracking + HTML views
+cargo run -p robo-perception -- cam-demo --out-dir cam-out     # camera + LiDAR pipeline + report
 ```
 
 Rust 1.89 or newer. More: [`docs/usage.md`](docs/usage.md) (CLI, Rust API,
-SDK), [`ros2/`](ros2/factor_tracker_ros) (ROS 2 node), [live browser demo](https://rsasaki0109.github.io/factor-tracker/)
+SDK), [`ros2/`](ros2/robo_perception_ros) (ROS 2 node), [live browser demo](https://rsasaki0109.github.io/robo-perception/)
 (phone camera, source in [`web/`](web)).
 
 ## Documentation

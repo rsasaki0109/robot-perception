@@ -10,8 +10,8 @@
 # env: PY  python with numpy and scipy (default python3)
 set -euo pipefail
 src=$1; yaw=${2:-1.0}; shift_m=${3:-0.1}; work=${4:-$(mktemp -d)}
-repo=$(cd "$(dirname "$0")/../.." && pwd); PY=${PY:-python3}; cli=$repo/target/release/factor-tracker
-cargo build --release -q -p factor-tracker --manifest-path "$repo/Cargo.toml"
+repo=$(cd "$(dirname "$0")/../.." && pwd); PY=${PY:-python3}; cli=$repo/target/release/robo-perception
+cargo build --release -q -p robo-perception --manifest-path "$repo/Cargo.toml"
 prior="--initial-velocity-variance 1 --accel-spectral-density 0.5 --report-coast-ms 0"
 birth="$prior --max-association-distance-m 1.0 --recent-track-window-ns 0 --min-birth-distance-m 0.8"
 mean() { "$PY" -c "

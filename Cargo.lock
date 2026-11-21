@@ -238,49 +238,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "252afb9ae5eaa683babdc6a068b3f5726eb19e05070c731f9b2a23a7c3e8ed34"
 
 [[package]]
-name = "factor-tracker"
-version = "0.1.0"
-dependencies = [
- "approx",
- "clap",
- "factor-tracker-core",
- "factor-tracker-engine",
- "nalgebra",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "factor-tracker-core"
-version = "0.1.0"
-dependencies = [
- "approx",
- "criterion",
- "nalgebra",
- "thiserror",
-]
-
-[[package]]
-name = "factor-tracker-engine"
-version = "0.1.0"
-dependencies = [
- "approx",
- "factor-tracker-core",
- "nalgebra",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "factor-tracker-wasm"
-version = "0.1.0"
-dependencies = [
- "factor-tracker-core",
- "nalgebra",
-]
-
-[[package]]
 name = "find-msvc-tools"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -511,6 +468,49 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
+
+[[package]]
+name = "robo-perception"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "clap",
+ "nalgebra",
+ "robo-perception-core",
+ "robo-perception-engine",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "robo-perception-core"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "criterion",
+ "nalgebra",
+ "thiserror",
+]
+
+[[package]]
+name = "robo-perception-engine"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "nalgebra",
+ "robo-perception-core",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "robo-perception-wasm"
+version = "0.1.0"
+dependencies = [
+ "nalgebra",
+ "robo-perception-core",
+]
 
 [[package]]
 name = "safe_arch"

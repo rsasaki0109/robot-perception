@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # KITTI 3D MOT benchmark in AB3DMOT's protocol (pedestrians, the PointRCNN
 # detections AB3DMOT ships, its evaluator at 3D IoU 0.25): converts the
-# validation sequences, replays factor-tracker and writes one result
+# validation sequences, replays robo-perception and writes one result
 # directory for AB3DMOT's evaluator. docs/evaluation.md ("KITTI 3D MOT").
 #
 # usage: scripts/kitti/ab3dmot_benchmark.sh <kitti-root> <ab3dmot-root> <work> [name]
@@ -9,7 +9,7 @@
 #   <ab3dmot-root>  a checkout of https://github.com/xinshuoweng/AB3DMOT
 #                   (its data/KITTI/detection and scripts/KITTI/evaluate.py)
 #   <work>          converted sequences and engine outputs
-#   [name]          result name (default factor_tracker): results go to
+#   [name]          result name (default robo_perception): results go to
 #                   <ab3dmot-root>/results/KITTI/<name>/data_0
 #
 # Then, in <ab3dmot-root>, with AB3DMOT's Python dependencies:
@@ -32,12 +32,12 @@ fi
 kitti=$1
 ab3dmot=$2
 work=$3
-name=${4:-factor_tracker}
+name=${4:-robo_perception}
 sequences=(0001 0006 0008 0010 0012 0013 0014 0015 0016 0018 0019)
 
 repo=$(cd "$(dirname "$0")/../.." && pwd)
-cargo build --release -q -p factor-tracker --manifest-path "$repo/Cargo.toml"
-cli="$repo/target/release/factor-tracker"
+cargo build --release -q -p robo-perception --manifest-path "$repo/Cargo.toml"
+cli="$repo/target/release/robo-perception"
 
 python3 "$repo/scripts/kitti/ab3dmot_val.py" detections "$ab3dmot" "$work/det" --category Pedestrian
 python3 "$repo/scripts/kitti/convert_tracking.py" --kitti-root "$kitti" --out "$work/seq" \
