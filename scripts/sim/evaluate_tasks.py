@@ -15,7 +15,9 @@ with mot_metrics.py (HOTA, IDF1, MOTA, ID switches) and velocity_error.py.
 Tasks simulated with a camera (`--camera`) and run through
 scripts/vlm/vlm_detect.py have `inputs_camera.jsonl`; they are also replayed
 in camera-assisted mode, where the VLM's 2D detections add class evidence to
-the LiDAR tracks. Class accuracy is scored for every run: the LiDAR class of
+the LiDAR tracks. With `inputs_fused.jsonl` (scripts/vlm/fuse_vlm_lidar.py:
+LiDAR pieces inside one VLM car or cyclist box merged before tracking) they
+are also tracked from the fused detections. Class accuracy is scored for every run: the LiDAR class of
 each matched track, and the fused class (the camera's class prior when the
 track has one, else the LiDAR class).
 
@@ -102,11 +104,14 @@ def main():
         variants = list(VARIANTS.items())
         if (src / "inputs_camera.jsonl").exists():
             variants.append(("+ VLM camera", BASE))
+        if (src / "inputs_fused.jsonl").exists():
+            variants.append(("+ VLM-fused detections", BASE))
         for variant, flags in variants:
             if variant in ONLY_FOR and name not in ONLY_FOR[variant]:
                 continue
             camera = variant == "+ VLM camera"
-            inputs = src / ("inputs_camera.jsonl" if camera else "inputs.jsonl")
+            inputs = src / {"+ VLM camera": "inputs_camera.jsonl",
+                            "+ VLM-fused detections": "inputs_fused.jsonl"}.get(variant, "inputs.jsonl")
             mode = "camera_assisted" if camera else "lidar_only"
             work = a.out / name / variant.strip("+ ").replace(" ", "_").replace(".", "")
             work.mkdir(parents=True, exist_ok=True)

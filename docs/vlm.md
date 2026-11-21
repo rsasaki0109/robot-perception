@@ -103,9 +103,59 @@ already made:
   and the camera, at 2 Hz, gives one box to one piece. No piece collects the 3
   hits within 1.5 s that a prior needs.
 
-So the camera has to act before tracking to fix these errors: merge the LiDAR
-clusters that project into one VLM car box, and label the merged detection
-with the VLM class. That is the next step.
+So the camera has to act before tracking to fix these errors. The next
+section does that.
+
+## VLM-guided LiDAR detections
+
+`fuse_vlm_lidar.py` edits the detections before the tracker sees them. For
+each scan that has a camera frame:
+
+1. Each LiDAR detection's 3D box is projected into the image.
+2. The detection is assigned to the VLM box that covers at least half of its
+   projected box. On a tie a person box wins, so a pedestrian in front of a
+   car stays a pedestrian.
+3. The pieces in one car or cyclist box are merged into one detection with
+   the VLM's class.
+4. The LiDAR sees only the near face of a car, which put merged centres about
+   2 m short. So the box is completed to the class's typical size (car
+   4.4 × 1.8 m, bicycle 1.7 × 0.5 m) along the line of sight.
+
+`eval_lidar_detections.py` scores the detections; `evaluate_tasks.py` tracks
+them as "+ VLM-fused detections". Recall is scored with the class-aware match
+radii of example 149.
+
+Mixed traffic, detections in the camera's view, 10 Hz camera
+(`149_perception_tasks --camera --camera-every 1`, 200 frames):
+
+| detections | recall | precision | person | cyclist | car |
+| --- | --- | --- | --- | --- | --- |
+| LiDAR clusters | 0.649 | 0.636 | 0.975 | 0.202 | 0.113 |
+| VLM-fused | 0.715 | 0.742 | 0.975 | 0.210 | 0.411 |
+
+Tracking, all objects within 35 m (most traffic is outside the camera's 75°
+horizontal view):
+
+| mixed_traffic | HOTA | IDF1 | MOTA | ID switches | class accuracy |
+| --- | --- | --- | --- | --- | --- |
+| LiDAR only | 0.514 | 0.530 | 0.275 | 45 | 0.766 |
+| + VLM camera (class prior) | 0.512 | 0.523 | 0.277 | 45 | 0.753 |
+| + VLM-fused detections, 2 Hz camera | 0.517 | 0.533 | 0.294 | 44 | 0.768 |
+| + VLM-fused detections, 10 Hz camera | 0.526 | 0.542 | 0.354 | 42 | 0.809 |
+
+On the eight people-only tasks the fusion merges and relabels nothing, and
+every score is unchanged.
+
+What still limits it:
+
+- **Cars**: in 13 of 30 in-view car cases (2 Hz) the VLM has no car box
+  (small, distant cars that `<OD>` does not confirm). When it has one, 10 of
+  17 fused cars are within 2 m before size completion and 12 of 17 after.
+- **Cyclists**: the VLM labels most riders "man" or "person"; the primitive
+  bicycle is rarely recognised. When it says cyclist, the fusion fixes the
+  LiDAR's person label. One cyclist beside a car was merged into the car.
+- **Rate**: 2 s per frame for the VLM, so a 10 Hz camera needs about 20 CPU
+  cores to keep up in real time.
 
 ## Scene questions
 
