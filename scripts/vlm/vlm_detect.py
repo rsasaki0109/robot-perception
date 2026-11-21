@@ -16,7 +16,8 @@ Two prompts per frame:
 Grounding always returns a box for every phrase, even with nothing there, so
 a grounded vehicle is kept only where `<OD>` also saw a vehicle (a "land
 vehicle", a wheel, ...: IoU >= 0.3, or the `<OD>` box's centre inside it).
-A person box standing on a bicycle box becomes one cyclist box (their
+A bicycle box mostly inside a car box is dropped (the car's wheels confirm
+it), a person box standing on a bicycle box becomes one cyclist box (their
 union), and boxes of one class overlapping at IoU > 0.6 are merged.
 
 The raw outputs of both prompts are saved (vlm_raw.jsonl), and
@@ -92,6 +93,14 @@ def run_prompts(processor, model, image):
     }
 
 
+def inside(inner, outer):
+    """Share of `inner`'s area inside `outer`."""
+    ix = max(0.0, min(inner[2], outer[2]) - max(inner[0], outer[0]))
+    iy = max(0.0, min(inner[3], outer[3]) - max(inner[1], outer[1]))
+    area = (inner[2] - inner[0]) * (inner[3] - inner[1])
+    return ix * iy / area if area > 0 else 0.0
+
+
 def corroborated(box, od_vehicles):
     for other in od_vehicles:
         cx, cy = (other[0] + other[2]) / 2, (other[1] + other[3]) / 2
@@ -106,6 +115,10 @@ def postprocess(raw):
     od_vehicles = [box for label, box in raw["od"] if label in OD_VEHICLE_LABELS]
     vehicles = [(VEHICLE_LABELS[label], box, label) for label, box in raw["grounding"]
                 if label in VEHICLE_LABELS and corroborated(box, od_vehicles)]
+    # A car's own wheels confirm grounded "bicycles" on it: drop bicycles
+    # that lie mostly inside a car.
+    cars = [box for cls, box, _ in vehicles if cls == 3]
+    vehicles = [v for v in vehicles if v[0] != 2 or all(inside(v[1], car) < 0.6 for car in cars)]
     # A rider: a person box over most of a bicycle's width, reaching down onto it.
     riders = set()
     merged = []

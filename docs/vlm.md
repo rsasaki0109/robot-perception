@@ -26,9 +26,11 @@ python3 scripts/sim/evaluate_tasks.py /tmp/tasks --out sim-out        # tracking
 ```
 
 The camera is 640 × 480 with a 60° vertical field of view, mounted 1.3 m
-high and running at 2 Hz. The people are a textured CC0 human mesh. Cars and
-bicycles are built from boxes and cylinders, and every person is the same
-mesh.
+high and running at 2 Hz. The people are a textured CC0 human mesh, and every
+person is the same mesh. The tables below were measured with cars and
+bicycles built from boxes and cylinders. The last section repeats the mixed
+traffic numbers with detailed procedural meshes and a rider posed on the
+bicycle.
 
 ## Speed
 
@@ -192,3 +194,32 @@ from a small VLM's yes/no. A larger chat VLM (2–3 B parameters) would take
 roughly 5–10 s per question on this CPU and has not been tried. The long-range
 counts disagree for another reason: the truth leaves out people under 300
 pixels, but both models count them.
+
+## Detailed vehicle meshes
+
+Robot Native Engine now generates the cars (a lofted 4.4 m sedan with glass,
+rims and lights) and the bicycles (spoked wheels, a diamond frame, a saddle
+and cranks) as meshes, and poses the rider through the person's rig. Alone
+and 7–18 m away, Florence-2's `<OD>` then names them "car" and "bicycle",
+where before it said "land vehicle". A car's wheels then confirmed grounded
+"bicycles" on the car, so a bicycle box mostly inside a car box is now
+dropped. The same 9 tasks, re-simulated with the new meshes:
+
+| mixed_traffic | primitives | meshes |
+| --- | --- | --- |
+| 2D precision | 0.958 | 1.000 |
+| 2D class accuracy | 0.878 | 0.912 |
+| 2D recall: person / cyclist / car | 0.94 / 0.77 / 0.56 | 0.91 / 0.76 / 0.61 |
+| fused detections in view, 10 Hz: recall / precision | 0.715 / 0.742 | 0.731 / 0.770 |
+| fused detections in view, 10 Hz: cyclist / car recall | 0.210 / 0.411 | 0.294 / 0.418 |
+| tracking, fused, 10 Hz: HOTA / IDF1 / MOTA | 0.526 / 0.542 / 0.354 | 0.527 / 0.551 / 0.345 |
+| tracking, fused, 10 Hz: ID switches / class accuracy | 42 / 0.809 | 44 / 0.815 |
+
+The people-only tasks score the same, since the people did not change.
+Better-looking vehicles help the VLM, mainly precision and class, but
+hardly the tracker. Its limits are now elsewhere:
+
+- most traffic is outside the camera's 75° view;
+- the VLM finds under half of the objects smaller than 40 px;
+- the LiDAR still splits cars outside the image.
+
