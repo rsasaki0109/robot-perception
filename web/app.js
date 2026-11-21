@@ -1,4 +1,4 @@
-// Camera -> MediaPipe person detector -> robo-perception 2D tracker (wasm) -> overlay.
+// Camera -> MediaPipe person detector -> robot-perception 2D tracker (wasm) -> overlay.
 import { FilesetResolver, ObjectDetector } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 import { loadTracker } from "./tracker.js";
 
@@ -34,7 +34,7 @@ async function createDetector(delegate) {
 
 async function init() {
   try {
-    tracker = await loadTracker("robo_perception_wasm.wasm");
+    tracker = await loadTracker("robot_perception_wasm.wasm");
   } catch (error) {
     status(`Could not load the tracker: ${error.message}`);
     return;

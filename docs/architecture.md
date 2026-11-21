@@ -2,12 +2,12 @@
 
 ## Overview
 
-`robo-perception` is a small Cargo workspace with two crates:
+`robot-perception` is a small Cargo workspace with two crates:
 
-- `robo-perception-core` — the tracking library. It has no file I/O, networking or
+- `robot-perception-core` — the tracking library. It has no file I/O, networking or
   media dependencies. Its only runtime dependencies are `nalgebra` and
   `thiserror`.
-- `robo-perception` — a thin binary around the library that performs file I/O,
+- `robot-perception` — a thin binary around the library that performs file I/O,
   synthetic scenario generation and HTML visualization.
 
 The processing pipeline is:
@@ -25,7 +25,7 @@ ObservationBatch (one sensor, one timestamp)
 Ground truth never enters the library. It exists only in the CLI scenario
 generator and the renderer.
 
-## Module map (`robo-perception-core`)
+## Module map (`robot-perception-core`)
 
 | Module | Responsibility |
 | --- | --- |
@@ -119,12 +119,12 @@ estimate ego-motion.
 
 ## Scope
 
-- A small Rust library (`robo-perception-core`) with two concrete trackers:
+- A small Rust library (`robot-perception-core`) with two concrete trackers:
   - `BBox2DTracker`: axis-aligned 2D bounding boxes on **one** camera image
     plane.
   - `Cartesian3DTracker`: 3D positions in **one** common frame, with
     multi-sensor sequential fusion.
-- A CLI (`robo-perception`) that generates reproducible synthetic scenarios,
+- A CLI (`robot-perception`) that generates reproducible synthetic scenarios,
   reads/writes JSONL observations and tracks, and writes a self-contained HTML
   visualization.
 
@@ -174,11 +174,11 @@ Future work is listed in [`ROADMAP.md`](../ROADMAP.md).
 ## Repository layout
 
 ```
-robo-perception/
-  crates/robo-perception-core/    tracking core (types, filter, assignment, lifecycle, trackers)
-  crates/robo-perception-engine/  camera-assisted LiDAR SDK (calibration, projection, async, eval, KITTI)
-  crates/robo-perception/     CLI, JSONL schemas, scenarios, reports
-  crates/robo-perception-wasm/    2D tracker exported to WebAssembly for the browser demo
+robot-perception/
+  crates/robot-perception-core/    tracking core (types, filter, assignment, lifecycle, trackers)
+  crates/robot-perception-engine/  camera-assisted LiDAR SDK (calibration, projection, async, eval, KITTI)
+  crates/robot-perception/     CLI, JSONL schemas, scenarios, reports
+  crates/robot-perception-wasm/    2D tracker exported to WebAssembly for the browser demo
   web/                       browser demo: phone camera -> person detector -> tracker (GitHub Pages)
   scripts/kitti/             KITTI tracking conversion and multi-sequence evaluation (Python + NumPy)
   scripts/coda/              CODa (robot dataset) frame fetch, CPU LiDAR detector, conversion to engine JSONL

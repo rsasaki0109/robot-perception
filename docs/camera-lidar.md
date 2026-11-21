@@ -1,6 +1,6 @@
 # Camera-assisted LiDAR tracking
 
-This document describes the `robo-perception` SDK layer: the pipeline from
+This document describes the `robot-perception` SDK layer: the pipeline from
 sensor detections and calibration to unified 3D tracks, diagnostics and
 comparison/evaluation. The scope is deliberately one camera + one LiDAR. The
 name reflects what is implemented: the LiDAR tracks the objects, and the camera
@@ -13,7 +13,7 @@ sensor detections (LiDAR in the LiDAR frame, camera in image pixels)
     -> bounded arrival-order reorder buffer (event time preserved)
     -> per-observation coordinate normalization (calibration + ego pose at event time)
     -> ego-pose correction from static landmarks (optional, --pose-correction)
-    -> LiDAR position tracking (robo-perception-core Cartesian3DTracker)
+    -> LiDAR position tracking (robot-perception-core Cartesian3DTracker)
     -> fixed-lag smoothing of the LiDAR tracks (optional, --smooth-lag)
     -> geometric camera association (projected 3D track boxes vs 2D detections)
     -> camera class evidence as a *soft* prior on LiDAR association (optional)
@@ -21,7 +21,7 @@ sensor detections (LiDAR in the LiDAR frame, camera in image pixels)
     -> comparison / evaluation / HTML report
 ```
 
-`robo-perception-core` still receives only observations that are already in one
+`robot-perception-core` still receives only observations that are already in one
 common tracking frame. Sensor frames, calibration, reordering and the camera
 live in the engine layer.
 
@@ -71,7 +71,7 @@ It is the optimum of a one-scan factor graph (one pose-correction variable,
 one robust position factor per matched landmark) on top of the given poses;
 without landmarks the correction stays where it is. Each `lidar_frame` then
 carries `pose_correction`, the row-major 4x4 transform from the given
-tracking frame to the corrected one; `robo-perception evaluate` and
+tracking frame to the corrected one; `robot-perception evaluate` and
 `scripts/eval/mot_metrics.py` map the truth of that frame through it, which
 is the same as scoring in the sensor frame. Camera projection uses the latest LiDAR scan's correction. Input:
 
@@ -80,14 +80,14 @@ is the same as scoring in the sensor frame. Camera projection uses the latest Li
 ```
 
 `scripts/coda/convert_coda.py` writes the detector's static classes (score
->= 0.5, within 40 m) as landmarks. Code: `crates/robo-perception-engine/src/landmarks.rs`.
+>= 0.5, within 40 m) as landmarks. Code: `crates/robot-perception-engine/src/landmarks.rs`.
 
 ## Fixed-lag smoothing
 
 With `--smooth-lag N` each LiDAR frame is emitted N scans late with every
 track's position, velocity and covariance re-estimated from the detections of
 the next N scans too (`FixedLagSmoother`,
-`crates/robo-perception-engine/src/smoother.rs`): a Rauch-Tung-Striebel
+`crates/robot-perception-engine/src/smoother.rs`): a Rauch-Tung-Striebel
 backward pass over the engine's own filtered states, with the tracker's
 motion model, so it is the marginal of each track's factor graph over the
 window. Nothing is re-associated: ids, lifecycles and observations stay as
@@ -223,7 +223,7 @@ sensor failure mode.
 All commands are listed in `usage.md`. The camera+LiDAR entry point is:
 
 ```sh
-cargo run -p robo-perception -- cam-demo --out-dir cam-demo-out
+cargo run -p robot-perception -- cam-demo --out-dir cam-demo-out
 ```
 
 which writes the synthetic fixture, replays it in the three modes, evaluates
@@ -232,13 +232,13 @@ them and renders `cam-demo-out/report.html`.
 Individual steps:
 
 ```sh
-cargo run -p robo-perception -- cam-fixture --out-dir cam-demo-out
-cargo run -p robo-perception -- replay --setup cam-demo-out/setup.json \
+cargo run -p robot-perception -- cam-fixture --out-dir cam-demo-out
+cargo run -p robot-perception -- replay --setup cam-demo-out/setup.json \
     --inputs cam-demo-out/inputs.jsonl --mode camera_assisted \
     --output cam-demo-out/outputs.jsonl --diagnostics cam-demo-out/diagnostics.json
-cargo run -p robo-perception -- evaluate --output cam-demo-out/outputs.jsonl \
+cargo run -p robot-perception -- evaluate --output cam-demo-out/outputs.jsonl \
     --truth cam-demo-out/truth.jsonl --metrics cam-demo-out/metrics.json
-cargo run -p robo-perception -- report --setup cam-demo-out/setup.json \
+cargo run -p robot-perception -- report --setup cam-demo-out/setup.json \
     --output cam-demo-out/outputs.jsonl --truth cam-demo-out/truth.jsonl \
     --metrics cam-demo-out/comparison.json --diagnostics cam-demo-out/diagnostics.json \
     --html cam-demo-out/report.html

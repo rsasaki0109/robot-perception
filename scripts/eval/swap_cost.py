@@ -10,7 +10,7 @@ detections track A had), the detections of A and B labelled g or g2 within
 +-window scans are partitioned two ways: as the engine associated them, and
 by the person they belong to. Both partitions are scored with the fixed-lag
 refiner's cost (constant-velocity Kalman negative log-likelihood plus a miss
-cost; `--fgo-lag`, crates/robo-perception-engine/src/fgo.rs). If the engine's
+cost; `--fgo-lag`, crates/robot-perception-engine/src/fgo.rs). If the engine's
 partition is cheaper, no search over associations can fix the swap with this
 cost: the model prefers the wrong answer.
 """

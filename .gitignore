@@ -5,4 +5,4 @@ Cargo.lock.bak
 /cam-demo-out
 /cam-demo-out-injected
 __pycache__/
-/web/robo_perception_wasm.wasm
+/web/robot_perception_wasm.wasm

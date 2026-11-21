@@ -20,14 +20,14 @@ Inputs: a window directory written by scripts/eval/coda_tracker_eval.sh
 for the LiDAR points.
 
 usage: render_compare.py <window-dir> <out.gif> --coda-root CODa --sequence 20 \
-           --left ab3dmot.jsonl "AB3DMOT-style" --right engine_distance.jsonl "robo-perception"
+           --left ab3dmot.jsonl "AB3DMOT-style" --right engine_distance.jsonl "robot-perception"
 Requires NumPy, SciPy, Pillow and ffmpeg.
 
 The README hero (the comparison) was produced with (CODa sequence 20, scans 12700-12860;
 the clearest of the eight evaluation windows; each tracker at its best setting on dev,
 docs/evaluation.md):
 
-    # detector without NMS, then NMS IoU 0.1 (AB3DMOT-style) and 0.3 (robo-perception)
+    # detector without NMS, then NMS IoU 0.1 (AB3DMOT-style) and 0.3 (robot-perception)
     python3 scripts/coda/detect_lidar_cpu.py ... --score-threshold 0.1 --nms-threshold 1.0 --out raw/coda20_12700
     python3 scripts/eval/nms_variants.py raw nms iou0.1 iou0.3
     PY=python3 scripts/eval/coda_tracker_eval.sh nms/iou0.1 CODa 0.4 work_a
@@ -36,7 +36,7 @@ docs/evaluation.md):
     python3 scripts/hero/render_compare.py work_a/coda20_12700/20 assets/compare_ab3dmot.gif \
         --coda-root CODa --sequence 20 --velocity \
         --left ab3dmot.jsonl "AB3DMOT-style (NMS 0.1, score >= 0.4)" \
-        --right engine_smooth.jsonl "robo-perception (NMS 0.3, score >= 0.5, 0.5 s smoothing)" \
+        --right engine_smooth.jsonl "robot-perception (NMS 0.3, score >= 0.5, 0.5 s smoothing)" \
         --title "Same detector, two trackers: identity switches and velocity" --subtitle ... --footer ...
 """
 

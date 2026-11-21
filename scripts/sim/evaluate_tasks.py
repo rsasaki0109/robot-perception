@@ -8,7 +8,7 @@ directory per task in this repository's replay format:
 
     cargo run --release -p perception_tasks --example 149_perception_tasks -- --out <sim-dir>
 
-This script replays each task through `robo-perception replay` in a few
+This script replays each task through `robot-perception replay` in a few
 configurations and scores the confirmed tracks against the simulated truth
 with mot_metrics.py (HOTA, IDF1, MOTA, ID switches) and velocity_error.py.
 
@@ -19,7 +19,7 @@ the LiDAR tracks. Class accuracy is scored for every run: the LiDAR class of
 each matched track, and the fused class (the camera's class prior when the
 track has one, else the LiDAR class).
 
-usage: evaluate_tasks.py <sim-dir> [--out <work-dir>] [--binary target/release/robo-perception] [--json results.json]
+usage: evaluate_tasks.py <sim-dir> [--out <work-dir>] [--binary target/release/robot-perception] [--json results.json]
 """
 
 import argparse
@@ -89,7 +89,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("sim_dir", type=Path)
     ap.add_argument("--out", type=Path, default=Path("sim-out"))
-    ap.add_argument("--binary", default="target/release/robo-perception")
+    ap.add_argument("--binary", default="target/release/robot-perception")
     ap.add_argument("--json", type=Path, help="also write all results here")
     a = ap.parse_args()
 

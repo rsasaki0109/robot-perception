@@ -13,7 +13,7 @@ Command line demos, the Rust API and the development checks.
 Generate both synthetic scenarios, track them and write visualizations:
 
 ```sh
-cargo run -p robo-perception -- demo --out-dir demo-out
+cargo run -p robot-perception -- demo --out-dir demo-out
 ```
 
 Then open `demo-out/demo_2d.html` and `demo-out/demo_3d_fusion.html` in a
@@ -23,18 +23,18 @@ The same steps can be run individually:
 
 ```sh
 # 1. Generate the 2D scenario (observations + ground truth, JSONL)
-cargo run -p robo-perception -- gen2d --out-dir demo-out --seed 42
+cargo run -p robot-perception -- gen2d --out-dir demo-out --seed 42
 
 # 2. Track it and render
-cargo run -p robo-perception -- track2d \
+cargo run -p robot-perception -- track2d \
     --input demo-out/observations_2d.jsonl \
     --output demo-out/tracks_2d.jsonl \
     --truth demo-out/ground_truth_2d.jsonl \
     --html demo-out/demo_2d.html
 
 # 3D multi-sensor fusion
-cargo run -p robo-perception -- gen3d --out-dir demo-out --seed 42
-cargo run -p robo-perception -- track3d \
+cargo run -p robot-perception -- gen3d --out-dir demo-out --seed 42
+cargo run -p robot-perception -- track3d \
     --input demo-out/observations_3d.jsonl \
     --output demo-out/tracks_3d.jsonl \
     --truth demo-out/ground_truth_3d.jsonl \
@@ -46,7 +46,7 @@ reproducible for a given seed.
 
 ## Camera-assisted LiDAR tracking (SDK)
 
-`robo-perception-engine` (the crate) turns sensor-native detections, calibration and
+`robot-perception-engine` (the crate) turns sensor-native detections, calibration and
 timestamps into common-frame 3D tracks plus association diagnostics, for one
 camera and one LiDAR. You do not assemble the pipeline yourself:
 
@@ -54,7 +54,7 @@ camera and one LiDAR. You do not assemble the pipeline yourself:
 sensor detections
     -> bounded arrival-order reorder buffer (event time preserved)
     -> per-observation coordinate normalization (calibration + ego pose at event time)
-    -> LiDAR position tracking (robo-perception-core)
+    -> LiDAR position tracking (robot-perception-core)
     -> geometric camera association (projected 3D boxes vs 2D detections)
     -> camera class evidence as a soft prior (camera-assisted mode)
     -> unified track output, diagnostics, comparison and HTML report
@@ -69,7 +69,7 @@ position valid indefinitely.
 Run the end-to-end synthetic demo (fixture, three modes, evaluation, report):
 
 ```sh
-cargo run -p robo-perception -- cam-demo --out-dir cam-demo-out
+cargo run -p robot-perception -- cam-demo --out-dir cam-demo-out
 ```
 
 This writes setup, inputs, truth, `comparison.json` and a local `report.html`.
@@ -95,7 +95,7 @@ the demo numbers come from the synthetic fixture.
 
 ```rust
 use nalgebra::Matrix4;
-use robo_perception_core::*;
+use robot_perception_core::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut tracker = BBox2DTracker::new(BBox2DTrackerConfig::default())?;
@@ -124,9 +124,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 Run the compiled examples:
 
 ```sh
-cargo run -p robo-perception-core --example quickstart
-cargo run -p robo-perception-core --example two_d_tracking
-cargo run -p robo-perception-core --example three_d_fusion
+cargo run -p robot-perception-core --example quickstart
+cargo run -p robot-perception-core --example two_d_tracking
+cargo run -p robot-perception-core --example three_d_fusion
 ```
 
 For 3D fusion, convert each sensor's measurement into the common tracking frame
@@ -134,7 +134,7 @@ first:
 
 ```rust
 use nalgebra::{Matrix3, Vector3};
-use robo_perception_core::RigidTransform3D;
+use robot_perception_core::RigidTransform3D;
 
 fn to_tracking_frame() -> Result<(), Box<dyn std::error::Error>> {
     let sensor_local_to_world =

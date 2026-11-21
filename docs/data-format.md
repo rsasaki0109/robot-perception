@@ -1,6 +1,6 @@
 # Data format
 
-`robo-perception` reads and writes JSONL: one JSON object per line. Every record
+`robot-perception` reads and writes JSONL: one JSON object per line. Every record
 contains
 
 - `schema_version` — currently `1`. A record with a different version is

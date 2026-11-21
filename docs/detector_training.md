@@ -24,7 +24,7 @@ a geometry-only LiDAR shape descriptor (`ROADMAP.md`).
 Write the new detector's boxes for the eight evaluation windows and run
 
 ```sh
-cargo build --release -p robo-perception
+cargo build --release -p robot-perception
 PY=python3 scripts/eval/coda_tracker_eval.sh <detections-root> <coda-root> 0.4 <work-dir>
 ```
 

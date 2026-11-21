@@ -1,4 +1,4 @@
-// Loads crates/robo-perception-wasm (built for wasm32-unknown-unknown) and wraps its
+// Loads crates/robot-perception-wasm (built for wasm32-unknown-unknown) and wraps its
 // scalar exports: ft_reset, ft_begin, ft_add, ft_end, ft_track.
 const FIELDS = ["id", "cx", "cy", "w", "h", "state", "updated"];
 

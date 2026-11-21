@@ -77,10 +77,10 @@ each group.
   `scripts/coda`), including CPU inference of the CODa PV-RCNN first stage
   and of a pedestrian detector fine-tuned from it
   (https://huggingface.co/rsasaki0109/coda-ped-centerpoint).
-- ROS 2 node (`ros2/robo_perception_ros`, Jazzy): `vision_msgs/Detection3DArray`
-  in, tracks with covariance out; the tracking runs in `robo-perception
+- ROS 2 node (`ros2/robot_perception_ros`, Jazzy): `vision_msgs/Detection3DArray`
+  in, tracks with covariance out; the tracking runs in `robot-perception
   stream` as a child process.
-- WebAssembly build of the 2D tracker (`crates/robo-perception-wasm`) and a
+- WebAssembly build of the 2D tracker (`crates/robot-perception-wasm`) and a
   browser camera demo (`web/`).
 - Ego-pose correction from static landmarks (`--pose-correction`): dev HOTA
   0.628 -> 0.636 on CODa, and robust to 1° / 0.1 m pose noise; on clean

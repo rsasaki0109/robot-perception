@@ -13,7 +13,7 @@ the PointRCNN detections AB3DMOT ships, and AB3DMOT's evaluator
       sigmoid(score), which keeps their order.
 
   results <sequence-dir> <engine-output.jsonl> <out.txt> --category Pedestrian
-      An engine output (robo-perception replay on the prepared sequence) ->
+      An engine output (robot-perception replay on the prepared sequence) ->
       one KITTI tracking result file: each confirmed track updated in a frame
       becomes `frame id type 0 0 alpha x1 y1 x2 y2 h w l x y z ry score` in
       rectified camera 0, at the track's position, with the size, heading and
@@ -137,7 +137,7 @@ def main() -> None:
     d.add_argument("--category", default="Pedestrian", choices=["Pedestrian", "Car", "Cyclist"])
     r = sub.add_parser("results")
     r.add_argument("sequence", type=Path, help="sequence directory written by convert_tracking.py")
-    r.add_argument("output", type=Path, help="engine output of robo-perception replay")
+    r.add_argument("output", type=Path, help="engine output of robot-perception replay")
     r.add_argument("out", type=Path)
     r.add_argument("--setup", type=Path, help="setup.json of the replay (default: <sequence>/setup.json)")
     r.add_argument("--category", default="Pedestrian", choices=["Pedestrian", "Car", "Cyclist"])

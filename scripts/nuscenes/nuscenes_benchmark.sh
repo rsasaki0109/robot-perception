@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # nuScenes tracking benchmark, pedestrians: the MEGVII detections of the
-# validation split, robo-perception on every scene, one result file in the
+# validation split, robot-perception on every scene, one result file in the
 # nuScenes tracking format. docs/evaluation.md ("nuScenes").
 #
 # usage: scripts/nuscenes/nuscenes_benchmark.sh <dataroot> <megvii_val.json> <work> [out.json]
@@ -27,11 +27,11 @@ fi
 dataroot=$1
 detections=$2
 work=$3
-out=${4:-$work/results_val_robo_perception.json}
+out=${4:-$work/results_val_robot_perception.json}
 
 repo=$(cd "$(dirname "$0")/../.." && pwd)
-cargo build --release -q -p robo-perception --manifest-path "$repo/Cargo.toml"
-cli="$repo/target/release/robo-perception"
+cargo build --release -q -p robot-perception --manifest-path "$repo/Cargo.toml"
+cli="$repo/target/release/robot-perception"
 
 python3 "$repo/scripts/nuscenes/nuscenes_tracking.py" inputs "$dataroot" "$detections" "$work"
 for d in "$work"/*/; do

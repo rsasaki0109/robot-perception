@@ -25,7 +25,7 @@ sensor failure.
 
 ## Metrics
 
-All metrics are computed by `robo_perception_engine::eval`. Matching condition: at
+All metrics are computed by `robot_perception_engine::eval`. Matching condition: at
 each evaluated timestamp, tracks and ground-truth objects are matched one-to-one
 by Euclidean distance with a hard gate (`EvalConfig::match_distance_m`, default
 2 m; `evaluate --match-distance-m`). Only **confirmed** tracks are matched
@@ -71,7 +71,7 @@ In the synthetic fixture the LiDAR association is unambiguous, so
 `camera_assisted` does not change the tracking result relative to
 `camera_associated`. The engine test suite contains a separate, constructed
 ambiguous example where the camera class prior changes which LiDAR detection is
-associated (see `crates/robo-perception-engine/tests/camera_lidar.rs`). That
+associated (see `crates/robot-perception-engine/tests/camera_lidar.rs`). That
 constructed example is a mechanism check only and is **not** evidence of a
 general real-world accuracy improvement.
 
@@ -148,7 +148,7 @@ shrinks: when two tracks sit on one object, the coasting one takes the
 observation back, the other starts coasting, and the two alternate. The
 engine therefore associates in two stages (the "matching cascade" of
 DeepSORT): tracks observed within `recent_track_window_ns` first, the
-remaining tracks against the leftover observations. In `robo-perception-core` the
+remaining tracks against the leftover observations. In `robot-perception-core` the
 option defaults to off; the engine uses 350 ms (at 10 Hz: tolerate up to two
 missed scans before a track loses priority).
 
@@ -238,7 +238,7 @@ camera, matches it to a YOLO box of the same frame (IoU >= 0.3) and stores a
 DINOv2 ViT-S/14 embedding of the crop (140x70, frozen, no ReID training) in the
 detection's `appearance` field; the tracker adds
 `appearance_weight * (1 - cos)` to the association cost and keeps a moving
-average per track (`robo-perception-core`, off by default).
+average per track (`robot-perception-core`, off by default).
 
 - The features separate people: cosine distance between the same person in
   consecutive frames has median 0.165 (90th percentile 0.28), between
@@ -443,7 +443,7 @@ persistence 3):
 ### Fixed-lag re-association (FGO)
 
 `--fgo-lag N` (replay, stream, and the ROS 2 node's `fgo_lag`) passes the
-engine's LiDAR frames through `robo_perception_engine::fgo::FixedLagRefiner`: over
+engine's LiDAR frames through `robot_perception_engine::fgo::FixedLagRefiner`: over
 the last N scans it re-decides which detection belongs to which person by the
 trajectories' factor-graph cost (constant-velocity motion and position
 factors; the optimum's cost is the Kalman prediction-error decomposition)
@@ -797,7 +797,7 @@ on the test half afterwards, only to see whether each step carries over:
 | + report a track only while its confidence is >= 0.73 | **0.774 / 0.680 / 1** | 0.861 / 0.760 / 20 | 0.818 / 0.727 / 21 |
 | AB3DMOT (tuned on the whole split) | 0.761 / 0.668 / 0 | **0.865 / 0.771 / 5** | **0.832 / 0.739 / 4** |
 
-On the test half robo-perception trails AB3DMOT by 0.4 sAMOTA and 1.2 MOTA
+On the test half robot-perception trails AB3DMOT by 0.4 sAMOTA and 1.2 MOTA
 points, with 20 ID switches to 5 (fragmentations 77 to 57): it associates by
 centre distance, AB3DMOT by 3D GIoU of the boxes. Birth suppression, which
 absorbs duplicate boxes on CODa, suppresses real neighbours here (348 of the
@@ -809,7 +809,7 @@ The evaluator scores a track by the average score of its boxes and drops
 whole tracks below a threshold (the one that maximizes MOTA; sAMOTA sweeps
 it). Far away, people stand in KITTI's DontCare regions or are not labelled,
 and PointRCNN detects them with weak scores and gaps: in 0013 a person 47 m
-ahead of the car, labelled only from about 20 m on, is one robo-perception
+ahead of the car, labelled only from about 20 m on, is one robot-perception
 track over 140 scans (it bridges gaps of up to 19 scans) and five AB3DMOT
 tracks (which end after three missed scans).
 Averaged over the unlabelled, weak part, the long track falls below the
@@ -848,7 +848,7 @@ validation split, the footing AB3DMOT's own settings have:
 | deleted after 1 s, reported from confidence 0.65 / 0.8 | 0.836 / 0.823 | **0.740** / 0.731 | 17 / 17 |
 | AB3DMOT | 0.832 | 0.739 | **4** |
 
-Both trackers tuned on the same split: robo-perception is level with AB3DMOT
+Both trackers tuned on the same split: robot-perception is level with AB3DMOT
 on sAMOTA and MOTA and has four times its ID switches. Deleting lost tracks
 sooner splits long tracks at their gaps, which the per-track score average
 favours, as it favours AB3DMOT's (it ends a track after three missed scans).
@@ -884,8 +884,8 @@ To reproduce (a checkout of https://github.com/xinshuoweng/AB3DMOT for its
 detections and evaluator; its code is not part of this repository):
 
 ```sh
-scripts/kitti/ab3dmot_benchmark.sh <kitti-root> <ab3dmot-root> work robo_perception
-cd <ab3dmot-root> && python3 scripts/KITTI/evaluate.py robo_perception 1 3D 0.25
+scripts/kitti/ab3dmot_benchmark.sh <kitti-root> <ab3dmot-root> work robot_perception
+cd <ab3dmot-root> && python3 scripts/KITTI/evaluate.py robot_perception 1 3D 0.25
 ```
 
 The evaluator scores the sequences in `scripts/KITTI/evaluate_tracking.seqmap.val`;
@@ -914,7 +914,7 @@ ID switches. Two trackers on the same detections:
 Neither tracker's code is part of this repository (both are licensed for
 noncommercial research). The validation scenes were split in name order,
 alternately, into a tune half and a test half of 75 each
-(`nuscenes_tracking.py splits`); every robo-perception choice was made on the
+(`nuscenes_tracking.py splits`); every robot-perception choice was made on the
 tune half and the test half scored once with the final settings. Chiu et
 al.'s published setting comes from their ablations on the whole validation
 split.
@@ -923,9 +923,9 @@ split.
 | --- | --- | --- | --- |
 | AB3DMOT (official results) | 0.078 | 0.109 / 1.738 / 0.242 / 0.135 / 448 | 0.094 |
 | Chiu et al. (challenge winner) | 0.774 | 0.721 / 0.570 / 0.780 / 0.622 / 143 | 0.754 |
-| **robo-perception** | **0.833** | **0.768 / 0.417 / 0.804 / 0.643 / 124** | **0.798** |
+| **robot-perception** | **0.833** | **0.768 / 0.417 / 0.804 / 0.643 / 124** | **0.798** |
 
-robo-perception here: tracking in the global frame (no ego poses needed),
+robot-perception here: tracking in the global frame (no ego poses needed),
 association by distance within 1.5 m, the detections' velocities as
 measurements (`--velocity-std 0.5`), each box scored by the detection that
 updated its track, a track written in the samples where it is updated
@@ -969,7 +969,7 @@ and restrict the devkit's `create_splits_scenes()["val"]` to them.
 ## Reproducing
 
 ```sh
-cargo run -p robo-perception -- cam-demo --out-dir cam-demo-out
+cargo run -p robot-perception -- cam-demo --out-dir cam-demo-out
 # comparison table: cam-demo-out/comparison.json
 # report:           cam-demo-out/report.html
 ```
@@ -977,7 +977,7 @@ cargo run -p robo-perception -- cam-demo --out-dir cam-demo-out
 To inject faults:
 
 ```sh
-cargo run -p robo-perception -- cam-demo --out-dir cam-demo-out \
+cargo run -p robot-perception -- cam-demo --out-dir cam-demo-out \
     --camera-delay-ns 150000000 --lidar-delay-ns 0 \
     --reverse-window 3 --duplicate-every 7 \
     --pause-sensor camera --pause-start-ns 1000000000 --pause-end-ns 2000000000

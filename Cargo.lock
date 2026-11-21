@@ -470,20 +470,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
-name = "robo-perception"
+name = "robot-perception"
 version = "0.1.0"
 dependencies = [
  "approx",
  "clap",
  "nalgebra",
- "robo-perception-core",
- "robo-perception-engine",
+ "robot-perception-core",
+ "robot-perception-engine",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "robo-perception-core"
+name = "robot-perception-core"
 version = "0.1.0"
 dependencies = [
  "approx",
@@ -493,23 +493,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "robo-perception-engine"
+name = "robot-perception-engine"
 version = "0.1.0"
 dependencies = [
  "approx",
  "nalgebra",
- "robo-perception-core",
+ "robot-perception-core",
  "serde",
  "serde_json",
  "thiserror",
 ]
 
 [[package]]
-name = "robo-perception-wasm"
+name = "robot-perception-wasm"
 version = "0.1.0"
 dependencies = [
  "nalgebra",
- "robo-perception-core",
+ "robot-perception-core",
 ]
 
 [[package]]

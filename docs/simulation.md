@@ -20,7 +20,7 @@ labelled as people) are part of each task.
 # in RobotNativeEngine
 cargo run --release -p perception_tasks --example 149_perception_tasks -- --out /tmp/perception_tasks
 # here
-cargo build --release -p robo-perception
+cargo build --release -p robot-perception
 python3 scripts/sim/evaluate_tasks.py /tmp/perception_tasks --out sim-out --json sim-out/results.json
 ```
 
