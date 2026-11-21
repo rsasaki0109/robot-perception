@@ -115,19 +115,24 @@ cargo run --release -p go2_people --example 151_go2_people -- --out target/go2_p
 
 Following and crossing succeed with every source. In the corridor:
 
-| perception | contacts | closest approach | tracks per frame |
-| --- | --- | --- | --- |
-| truth | 0 | 0.77 m | 0.94 |
-| robot-perception | 1 | 0.52 m | 4.23 |
-| robot-perception + static map | 0 | 0.60 m | 2.07 |
-| greedy nearest neighbour | 2 | 0.38 m | 3.63 |
-| greedy nearest neighbour + static map | 1 | 0.41 m | 2.19 |
+Eight trials per task (each person starting up to 2 s earlier or later),
+runs with a contact out of 8:
 
-Wall pieces pass the simple person test, so the trackers report several
-tracks per frame where about one person is present. False detections, more
-than association, decide the outcome. A static map, built online from the
-robot's own scans (cells first seen 6 s ago and hit often since), halves the
-phantoms, and with it robot-perception passes everyone.
+| perception | follow | crossing | corridor | furnished room |
+| --- | --- | --- | --- | --- |
+| truth | 0 | 0 | 0 | 0 |
+| robot-perception | 0 | 0 | 4 | 2 |
+| robot-perception + static map | 0 | 0 | 2 | 0 |
+| robot-perception + static map + SLAM | 0 | 0 | 2 | 3 |
+| greedy nearest neighbour | 1 | 0 | 3 | 2 |
+| greedy nearest neighbour + static map | 1 | 0 | 6 | 0 |
+
+robot-perception is on the wrong person 6 % of the time when following,
+against 12 % for the greedy tracker. Wall pieces and furniture pass the
+simple person test and become phantom people. A static map built online from
+the robot's own scans removes most of them. SLAM localizes the robot to 4 cm
+in the furnished room but does not yet make it safer there; see the example's
+write-up.
 
 ## Camera and VLM
 
