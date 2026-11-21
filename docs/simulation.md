@@ -115,15 +115,19 @@ cargo run --release -p go2_people --example 151_go2_people -- --out target/go2_p
 
 Following and crossing succeed with every source. In the corridor:
 
-| perception | contacts | closest approach |
-| --- | --- | --- |
-| truth | 0 | 0.77 m |
-| robot-perception | 1 | 0.52 m |
-| greedy nearest neighbour | 2 | 0.38 m |
+| perception | contacts | closest approach | tracks per frame |
+| --- | --- | --- | --- |
+| truth | 0 | 0.77 m | 0.94 |
+| robot-perception | 1 | 0.52 m | 4.23 |
+| robot-perception + static map | 0 | 0.60 m | 2.07 |
+| greedy nearest neighbour | 2 | 0.38 m | 3.63 |
+| greedy nearest neighbour + static map | 1 | 0.41 m | 2.19 |
 
-The trackers report 3.6–4.2 tracks per frame where about one person is
-present, because wall pieces pass the simple person test. False detections,
-more than association, decide the outcome.
+Wall pieces pass the simple person test, so the trackers report several
+tracks per frame where about one person is present. False detections, more
+than association, decide the outcome. A static map, built online from the
+robot's own scans (cells first seen 6 s ago and hit often since), halves the
+phantoms, and with it robot-perception passes everyone.
 
 ## Camera and VLM
 
