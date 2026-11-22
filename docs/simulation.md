@@ -116,15 +116,15 @@ cargo run --release -p go2_people --example 151_go2_people -- --out target/go2_p
 Eight trials per task (each person starting up to 2 s earlier or later),
 runs with a contact out of 8:
 
-| perception | follow | crossing | corridor | furnished room | crowd |
-| --- | --- | --- | --- | --- | --- |
-| truth | 0 | 0 | 0 | 0 | 0 |
-| truth + SLAM | 0 | 0 | 0 | 0 | 0 |
-| robot-perception | 0 | 0 | 1 | 0 | 3 |
-| robot-perception + static map | 0 | 0 | 0 | 0 | 1 |
-| robot-perception + static map + SLAM | 0 | 0 | 0 | 0 | 1 |
-| greedy nearest neighbour | 0 | 0 | 0 | 0 | 4 |
-| greedy nearest neighbour + static map | 0 | 0 | 0 | 0 | 4 |
+| perception | follow | crossing | corridor | furnished room | crowd | crowd, people who stop for the robot |
+| --- | --- | --- | --- | --- | --- | --- |
+| truth | 0 | 0 | 0 | 0 | 0 | 0 |
+| truth + SLAM | 0 | 0 | 0 | 0 | 0 | 0 |
+| robot-perception | 0 | 0 | 1 | 0 | 3 | 1 |
+| robot-perception + static map | 0 | 0 | 0 | 0 | 1 | 1 |
+| robot-perception + static map + SLAM | 0 | 0 | 0 | 0 | 1 | 0 |
+| greedy nearest neighbour | 0 | 0 | 0 | 0 | 4 | 2 |
+| greedy nearest neighbour + static map | 0 | 0 | 0 | 0 | 4 | 2 |
 
 robot-perception is on the wrong person 6 % of the time when following,
 against 12 % for the greedy tracker. Wall pieces and furniture pass the
@@ -150,6 +150,12 @@ walked into them in 7 of 8 runs until a safety layer stopped it short of
 person-shaped static clusters. The remaining crowd contacts are all with
 tracked people, at a moment when three or four are within 2 m. Track noise
 changes when the robot waits, and someone walks into it.
+
+With people who stop for the robot instead of walking through it, the
+crowd contacts fall to 0–2 of 8. That surfaced a deadlock: a person who
+stopped for the robot joined the static map after 6 s, and the safety layer
+then held the robot while they waited for it. Planning around such
+clusters, and turning away from one in the way, leaves 2 stuck runs of 32.
 
 A dynamic-window controller removes the corridor contacts but falls there
 in 13 of 48 runs and comes too close in the room; see the example's
