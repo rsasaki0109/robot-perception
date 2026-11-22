@@ -120,23 +120,31 @@ runs with a contact out of 8:
 | --- | --- | --- | --- | --- |
 | truth | 0 | 0 | 0 | 0 |
 | truth + SLAM | 0 | 0 | 0 | 0 |
-| robot-perception | 0 | 0 | 5 | 0 |
-| robot-perception + static map | 0 | 0 | 1 | 0 |
-| robot-perception + static map + SLAM | 0 | 0 | 1 | 0 |
-| greedy nearest neighbour | 1 | 0 | 4 | 0 |
-| greedy nearest neighbour + static map | 1 | 0 | 6 | 0 |
+| robot-perception | 0 | 0 | 1 | 0 |
+| robot-perception + static map | 0 | 0 | 0 | 0 |
+| robot-perception + static map + SLAM | 0 | 0 | 0 | 0 |
+| greedy nearest neighbour | 0 | 0 | 0 | 0 |
+| greedy nearest neighbour + static map | 0 | 0 | 0 | 0 |
 
 robot-perception is on the wrong person 6 % of the time when following,
 against 12 % for the greedy tracker. Wall pieces and furniture pass the
-simple person test and become phantom people. A static map built online from
-the robot's own scans removes most of them. SLAM localizes the robot to 4 cm
-in the furnished room. Contacts there first looked like a SLAM problem.
-The traces showed the controller instead: it picked the side to pass a
-person on from one frame of a new track's velocity, and a few degrees of
-error at 5 m put it on the wrong side. Choosing from the track's mean
-velocity removed every room contact. A dynamic-window controller removes
-the corridor contacts but falls there in 13 of 48 runs and comes too
-close in the room; see the example's write-up.
+simple person test and become phantom people; a static map built online
+from the robot's own scans removes most of them. SLAM localizes the robot to
+4 cm in the furnished room.
+
+The controller came out as the bigger factor. As first written, it touched
+someone in 2–6 of 8 corridor runs and up to 3 of 8 room runs, with every
+real source. The traces showed correct tracks: the controller acted on
+single frames of their velocity. A few degrees of direction error at 5–6 m
+moves a person's predicted line by a metre or more. That was enough to
+pick the wrong side to pass on, or to keep abandoning a lane change.
+Planning from velocity smoothed over about a second removed all but one
+contact. A tracker's velocity noise reaches the robot through such
+decisions, which tracking metrics do not show.
+
+A dynamic-window controller removes the corridor contacts but falls there
+in 13 of 48 runs and comes too close in the room; see the example's
+write-up.
 
 ## Camera and VLM
 
