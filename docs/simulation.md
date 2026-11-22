@@ -103,7 +103,7 @@ The tasks above score tracks. Robot Native Engine's
 [example 151](https://github.com/rsasaki0109/RobotNativeEngine/tree/main/examples/151_go2_people)
 scores what a robot does with them instead. A Go2 sees people only through
 its Mid-360. It follows a person, yields to people crossing, and passes
-people in a corridor. The `stream` command runs inside its control loop, one
+people in a corridor and a crowded hall. The `stream` command runs inside its control loop, one
 `lidar_batch` in and one `lidar_frame` out per 0.1 s scan, at about 0.1 ms
 per frame:
 
@@ -116,15 +116,15 @@ cargo run --release -p go2_people --example 151_go2_people -- --out target/go2_p
 Eight trials per task (each person starting up to 2 s earlier or later),
 runs with a contact out of 8:
 
-| perception | follow | crossing | corridor | furnished room |
-| --- | --- | --- | --- | --- |
-| truth | 0 | 0 | 0 | 0 |
-| truth + SLAM | 0 | 0 | 0 | 0 |
-| robot-perception | 0 | 0 | 1 | 0 |
-| robot-perception + static map | 0 | 0 | 0 | 0 |
-| robot-perception + static map + SLAM | 0 | 0 | 0 | 0 |
-| greedy nearest neighbour | 0 | 0 | 0 | 0 |
-| greedy nearest neighbour + static map | 0 | 0 | 0 | 0 |
+| perception | follow | crossing | corridor | furnished room | crowd |
+| --- | --- | --- | --- | --- | --- |
+| truth | 0 | 0 | 0 | 0 | 0 |
+| truth + SLAM | 0 | 0 | 0 | 0 | 0 |
+| robot-perception | 0 | 0 | 1 | 0 | 3 |
+| robot-perception + static map | 0 | 0 | 0 | 0 | 1 |
+| robot-perception + static map + SLAM | 0 | 0 | 0 | 0 | 1 |
+| greedy nearest neighbour | 0 | 0 | 0 | 0 | 4 |
+| greedy nearest neighbour + static map | 0 | 0 | 0 | 0 | 4 |
 
 robot-perception is on the wrong person 6 % of the time when following,
 against 12 % for the greedy tracker. Wall pieces and furniture pass the
@@ -141,6 +141,15 @@ pick the wrong side to pass on, or to keep abandoning a lane change.
 Planning from velocity smoothed over about a second removed all but one
 contact. A tracker's velocity noise reaches the robot through such
 decisions, which tracking metrics do not show.
+
+The crowd (nine people in a hall, including an overtaker and a pair
+standing in the way) separates the sources again, and there robot-perception
+with the static map is best. It also exposes a limit of online static maps:
+the standing pair is absorbed into the map like a pillar, and the robot
+walked into them in 7 of 8 runs until a safety layer stopped it short of
+person-shaped static clusters. The remaining crowd contacts are all with
+tracked people, at a moment when three or four are within 2 m. Track noise
+changes when the robot waits, and someone walks into it.
 
 A dynamic-window controller removes the corridor contacts but falls there
 in 13 of 48 runs and comes too close in the room; see the example's
