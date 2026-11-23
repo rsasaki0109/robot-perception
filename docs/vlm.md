@@ -223,3 +223,11 @@ hardly the tracker. Its limits are now elsewhere:
 - the VLM finds under half of the objects smaller than 40 px;
 - the LiDAR still splits cars outside the image.
 
+## In a robot's control loop
+
+`scripts/vlm/vlm_people_server.py` answers one JSON line per image with the
+people Florence-2 finds. Robot Native Engine's example 151 uses it on a
+Go2's camera to tell people standing still from the structure an online
+static map absorbs them into. It finds the rendered people reliably, but
+in that example's crowd it does not change the outcome; see
+[`docs/simulation.md`](simulation.md).

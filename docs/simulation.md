@@ -157,6 +157,12 @@ stopped for the robot joined the static map after 6 s, and the safety layer
 then held the robot while they waited for it. Planning around such
 clusters, and turning away from one in the way, leaves 2 stuck runs of 32.
 
+The camera and VLM also run inside this loop. Florence-2 confirms static
+person-shaped clusters as people, so the map no longer hides them from the
+tracker. Over 8 crowd trials this changes nothing measurable: planning
+around such clusters already does the job, and the remaining contacts are
+crowded moments, not missed people.
+
 A dynamic-window controller removes the corridor contacts but falls there
 in 13 of 48 runs and comes too close in the room; see the example's
 write-up.
