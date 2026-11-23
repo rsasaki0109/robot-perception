@@ -120,11 +120,11 @@ runs with a contact out of 8:
 | --- | --- | --- | --- | --- | --- | --- |
 | truth | 0 | 0 | 0 | 0 | 0 | 0 |
 | truth + SLAM | 0 | 0 | 0 | 0 | 0 | 0 |
-| robot-perception | 0 | 0 | 1 | 0 | 3 | 1 |
-| robot-perception + static map | 0 | 0 | 0 | 0 | 1 | 1 |
-| robot-perception + static map + SLAM | 0 | 0 | 0 | 0 | 1 | 0 |
-| greedy nearest neighbour | 0 | 0 | 0 | 0 | 4 | 2 |
-| greedy nearest neighbour + static map | 0 | 0 | 0 | 0 | 4 | 2 |
+| robot-perception | 0 | 0 | 0 | 0 | 3 | 1 |
+| robot-perception + static map | 0 | 0 | 1 | 0 | 1 | 0 |
+| robot-perception + static map + SLAM | 0 | 0 | 1 | 0 | 1 | 0 |
+| greedy nearest neighbour | 0 | 0 | 0 | 0 | 3 | 2 |
+| greedy nearest neighbour + static map | 0 | 0 | 0 | 0 | 4 | 0 |
 
 robot-perception is on the wrong person 6 % of the time when following,
 against 12 % for the greedy tracker. Wall pieces and furniture pass the
@@ -156,6 +156,15 @@ crowd contacts fall to 0–2 of 8. That surfaced a deadlock: a person who
 stopped for the robot joined the static map after 6 s, and the safety layer
 then held the robot while they waited for it. Planning around such
 clusters, and turning away from one in the way, leaves 2 stuck runs of 32.
+
+The rule controller weighs one person at a time, so it now also rolls its
+command and eight alternatives out for 3 s against every track, and takes
+an alternative when its own command would pass within 0.75 m. With people
+who stop for the robot, the static-map sources' crowd contacts go from 1–2
+of 8 to 0. Against people who walk through it, nothing changes. The first
+version picked hard turns that cleared people and walked the robot into the
+corridor's walls (7 falls in 48 runs). Alternatives that come within
+0.45 m of a non-person scan return are now ruled out.
 
 The camera and VLM also run inside this loop. Florence-2 confirms static
 person-shaped clusters as people, so the map no longer hides them from the
