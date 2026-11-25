@@ -160,10 +160,23 @@ The camera never:
 - deletes an out-of-view LiDAR track,
 - keeps an old 3D position valid indefinitely.
 
-Three timestamps are tracked separately: `state_timestamp`,
-`last_spatial_update_ns` (the last LiDAR update) and `last_camera_support_ns`.
-The age since the last spatial update is always reported, and projection is
-gated on it, so camera support cannot extend the validity of an old position.
+The stream reports three timestamps in nanoseconds:
+
+| Field | Meaning |
+| --- | --- |
+| `state_timestamp_ns` | Time of the estimated track state |
+| `last_spatial_update_ns` | Most recent LiDAR measurement used for the track |
+| `last_camera_support_ns` | Most recent camera observation associated with the track |
+
+`age_since_spatial_update_ns` measures how old the LiDAR evidence is, and
+projection is gated on that age. Camera support can provide class evidence
+while the position estimate ages. When `prediction_only` is true, the output
+position is a prediction at the state timestamp. A controller can use that
+flag to retain the last measured position for a bounded time while marking
+the person unobserved. The flag cannot distinguish occlusion from a person
+leaving the sensor's field of view. The
+[Go2 simulation](https://github.com/rsasaki0109/RobotNativeEngine/blob/claude/relaxed-cerf-z71crt/examples/151_go2_people/README.md#person-observation-memory)
+uses it to avoid refreshing observation memory from predictions.
 
 ## Class evidence and the soft prior
 
