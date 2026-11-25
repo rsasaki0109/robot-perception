@@ -1,48 +1,54 @@
-<p align="center">
-  <img src="assets/compare_ab3dmot.gif" alt="Side-by-side bird's-eye views of the same 16 s of CODa sequence 20 with velocity arrows: an AB3DMOT-style tracker (left) makes 25 identity switches with a median velocity error of 0.17 m/s, factor-tracker with 0.5 s smoothing (right) makes 6 with 0.13 m/s" width="100%">
-</p>
+# Robot Perception
 
-<h1 align="center">Factor Graph Object Tracker</h1>
+[![CI](https://github.com/rsasaki0109/robot-perception/actions/workflows/ci.yml/badge.svg)](https://github.com/rsasaki0109/robot-perception/actions/workflows/ci.yml)
+![Rust 1.89+](https://img.shields.io/badge/Rust-1.89%2B-orange)
+[![MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
-<p align="center"><code>factor-tracker</code></p>
+**Multi-object tracking for robots, in Rust.** Feed `factor-tracker` timestamped detections from a LiDAR or camera detector. Get track IDs, positions, velocities, and covariance in a common frame for 3D LiDAR tracking, or tracked image boxes in 2D. Camera detections can associate with 3D LiDAR tracks and supply class evidence.
 
-<p align="center">
-  <a href="https://github.com/rsasaki0109/factor-tracker/actions/workflows/ci.yml"><img src="https://github.com/rsasaki0109/factor-tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="#license"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg" alt="License: MIT OR Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/MSRV-1.89-orange.svg" alt="MSRV 1.89">
-  <img src="https://img.shields.io/badge/dependencies-nalgebra%20%7C%20thiserror-informational.svg" alt="Dependencies: nalgebra, thiserror">
-</p>
+[Try the camera demo](https://rsasaki0109.github.io/robot-perception/) · [CLI and Rust API](docs/usage.md) · [ROS 2](ros2/factor_tracker_ros) · [Benchmark reproduction](docs/evaluation.md)
 
-<p align="center"><em>Same detector, two trackers, each at its best setting on dev (CODa seq 20, 16 s). Red rings: identity switches against CODa's labels. Arrows: estimated velocity, 2 s ahead; grey: from the labels.</em></p>
+![Bird’s-eye comparison of two trackers on the same 16 seconds of CODa sequence 20. Red rings mark ID switches and arrows show estimated velocity.](assets/compare_ab3dmot.gif)
 
-Multi-object tracking for robots in Rust: detections from any 3D detector in,
-people (or other objects) with stable IDs, position, velocity and covariance
-out. Kalman filtering and assignment per scan, with fixed-lag factor-graph
-smoothing and ego-pose correction on top. CPU-only; the core library has
-two dependencies (`nalgebra`, `thiserror`). A ROS 2 node and a
-[browser demo](https://rsasaki0109.github.io/factor-tracker/) are included.
+On this CODa clip, the AB3DMOT-style baseline made 25 ID switches with a median velocity error of 0.17 m/s. `factor-tracker` with 0.5 s smoothing made 6 switches with 0.13 m/s error. Both use CODa PV-RCNN detections, with their detection settings selected on development data. See [Results](#results) for the full evaluation and its limits.
 
-## Why factor-tracker
+## Quick start
 
-Measured with the same detections for every tracker (tables below):
+Clone the repository with Rust 1.89 or newer. The synthetic examples run on CPU.
 
-- **Ahead of the nuScenes tracking-challenge winner on pedestrians**: AMOTA
-  0.768 against 0.721 (Chiu et al., first place at NeurIPS 2019) on the
-  held-out half of the validation split, official devkit, MEGVII detections;
-  0.798 against 0.754 on the whole split.
-- **Fewer identity switches** on CODa than an AB3DMOT-style tracker: 773 vs
-  987 on the development windows (562 with pose correction), 18 vs 28 on the
-  held-out ones.
-- **About 25-30 % better velocities with 0.5 s smoothing** (`--smooth-lag 5`):
-  each scan is re-estimated with the next five, which also raises HOTA. The
-  ROS 2 node publishes both: `tracks` at once, `tracks/smoothed` 0.5 s later.
-- **Robust to jittery ego poses** (`--pose-correction`): each scan is aligned
-  with the static objects the detector also reports (poles, trees, bins).
-  With 1° / 0.1 m of pose noise added, HOTA stays at 0.631 dev / 0.767
-  held-out; without it the tracker drops to 0.538 / 0.688 (AB3DMOT-style
-  0.514 / 0.649).
-- **Drop-in**: any detector, any frame with TF (ROS 2), no GPU, deterministic
-  replay of recorded detections for evaluation.
+```sh
+git clone https://github.com/rsasaki0109/robot-perception.git
+cd robot-perception
+cargo run --release -p factor-tracker -- cam-demo --out-dir cam-demo-out
+```
+
+Open `cam-demo-out/report.html` to compare LiDAR-only, camera-associated, and camera-assisted tracking. The run also generates a calibration file and a JSONL recording you can feed through the live interface.
+
+```sh
+cargo run --release -p factor-tracker -- stream --setup cam-demo-out/setup.json \
+  < cam-demo-out/inputs.jsonl > cam-demo-out/live-tracks.jsonl
+```
+
+Use the same stdin/stdout interface from a simulator or a detector process. Robot Native Engine's Go2 people example uses it in a closed-loop simulation. See the [stream schema and camera modes](docs/camera-lidar.md) and the [Go2 integration](https://github.com/rsasaki0109/RobotNativeEngine/blob/claude/relaxed-cerf-z71crt/examples/151_go2_people/README.md).
+
+For standalone 2D and 3D tracking examples, run `cargo run -p factor-tracker -- demo --out-dir demo-out` and open the generated HTML views.
+
+## Ways to integrate
+
+| Interface | Use it for |
+| --- | --- |
+| [CLI](docs/usage.md) | Live JSONL tracking, deterministic replay, evaluation, and HTML reports |
+| [Rust crates](docs/architecture.md) | Embed the CPU-only tracker in a Rust application. The core depends on `nalgebra` and `thiserror`. |
+| [ROS 2 node](ros2/factor_tracker_ros) | Consume detections with TF and publish live tracks and optional delayed smoothed tracks |
+| [Browser demo](https://rsasaki0109.github.io/robot-perception/) | Track people in image coordinates with the WebAssembly 2D tracker |
+
+## Tracking options
+
+- **Per-scan tracking** uses constant-velocity Kalman prediction, gated Hungarian assignment, and a timestamp-based track lifecycle.
+- **Fixed-lag smoothing** estimates positions and velocities using subsequent scans. On the CODa evaluation, a five-scan lag (0.5 s) lowered median velocity error from 0.218 to 0.155 m/s on development windows and from 0.129 to 0.099 m/s on held-out windows.
+- **Fixed-lag re-association** revisits recent assignment decisions to correct track identities.
+- **Ego-pose correction** uses static landmarks supplied by the detector to reduce pose jitter. On the CODa pose-noise test (1° and 0.1 m), held-out HOTA was 0.767 with correction and 0.688 without.
+- **Camera association** projects 3D track boxes into the image. Camera-assisted mode uses the associated detections as class evidence. The 3D position and its covariance are estimated from LiDAR measurements.
 
 ## Results
 
@@ -125,17 +131,6 @@ flowchart TD
   <img src="assets/hero_mid360.gif" alt="factor-tracker on GrandTour ETH-2: ANYmal quadruped with a Livox Mid-360 and a front camera among people in the ETH main hall" width="100%">
 </p>
 <p align="center"><em>Livox Mid-360 + camera on a quadruped (GrandTour ETH-2); see <a href="docs/mid360.md"><code>docs/mid360.md</code></a>.</em></p>
-
-## Quick start
-
-```sh
-cargo run -p factor-tracker -- demo --out-dir demo-out        # synthetic 2D/3D tracking + HTML views
-cargo run -p factor-tracker -- cam-demo --out-dir cam-out     # camera + LiDAR pipeline + report
-```
-
-Rust 1.89 or newer. More: [`docs/usage.md`](docs/usage.md) (CLI, Rust API,
-SDK), [`ros2/`](ros2/factor_tracker_ros) (ROS 2 node), [live browser demo](https://rsasaki0109.github.io/factor-tracker/)
-(phone camera, source in [`web/`](web)).
 
 ## Documentation
 
