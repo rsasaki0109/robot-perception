@@ -147,3 +147,71 @@ This checks the recorded-depth path and the spinning-LiDAR checkpoint's
 behavior on that clip. It does not establish RealSense detection accuracy.
 The [sensor setup](https://grand-tour.leggedrobotics.com/setup) describes
 the rig.
+
+
+## One sweep versus three on the same scans
+
+All rows use ETH-2 scan IDs 3700–3900 and the same tracker settings and
+matching criterion above. A single-sweep file uses only the current
+LiDAR packet after mount transformation. Three sweeps also use the
+previous two scans, aligned by odometry. CenterPoint kept the same
+checkpoint, 0.5 score and 0.3 rotated NMS thresholds for both inputs.
+
+| Detector | Sweeps | Boxes | Track coverage | ID switches | Detector median / p95 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Bundled PV-RCNN detections | 3 | 3,740 | 99.0% | 22 | — |
+| CenterPoint CPU | 1 | 2,441 | 81.5% | 89 | 1038 / 1162 ms |
+| CenterPoint CPU | 3 | 3,066 | 81.2% | 97 | 1114 / 1249 ms |
+| Geometric clustering | 1 | 6,638 | 79.8% | 82 | 2.4 / 3.3 ms |
+| Geometric clustering | 3 | 6,022 | 65.1% | 83 | 4.5 / 7.0 ms |
+
+The clustering backend ports example 151's scan-only connected-cell
+classifier to this adapter. It uses 0.15 m cells, a 15 m radial crop and
+a fixed floor at −0.50 m in the ANYmal base frame. Its score of 1 is
+a placeholder. Timings exclude disk reads and tracking. These coverage
+values use detector-derived annotations. Box counts include detections
+outside the annotated area, so neither column gives recall or false
+positive rate. The supplied PV-RCNN results cover the three-sweep
+condition. PointPillars has yet to be run on CUDA.
+
+```sh
+python "$repo/scripts/solid_state/detect.py" \
+  --backend cluster --sensor mid360 --floor-z-m -0.5 \
+  --scans "$sequence/scans" --template "$sequence/baseline.jsonl" --out "$sequence/cluster.jsonl"
+```
+
+### Detector-blind review
+
+The review generator selects every twentieth scan from 3700 to 3900
+(11 sheets), pairs each with the same-index front image roughly 48 ms
+later and shows single- and three-sweep point clouds without detector
+overlays. It initializes a per-frame review checklist and an empty
+person annotation CSV. Mark the reviewed region, occlusion and uncertain
+cases explicitly. Use adjacent scans to judge motion. The camera only
+confirms its field of view. A reviewer can record people that none of
+the detectors returned. Human review and the independent distance and
+occlusion breakdowns are pending.
+
+```sh
+python "$repo/scripts/solid_state/review.py" \
+  --single /path/to/single-sweeps --three "$sequence/scans" \
+  --images /path/to/raw/alphasense_front_center --out "$sequence/independent-review"
+```
+
+Export the one-sweep files with the same GrandTour preparation and
+`--accumulate 1`, and the three-sweep files with `--accumulate 3`.
+Use the raw JPEGs for review. The plots require Matplotlib, NumPy and Pillow.
+
+### RealSense with an RGB person detector
+
+People are visible in the same mission's front camera around the D435i
+clip. In a CPU pilot on six raw Alphasense frames (3700–3750, step 10),
+COCO-trained SSDLite MobileNetV3 produced six person boxes with scores
+≥ 0.5 across four images. For image 3700, the D435i frame 5549 is
+24.9 ms earlier. Projecting the depth points through the recorded mounts
+and Alphasense fisheye intrinsics gave depth samples inside the central
+half of both RGB person boxes. Their median planar ranges were 3.61 m
+and 5.49 m. The pilot uses the shared base frame without compensating
+the 24.9 ms offset. The ranges are unvalidated samples and may include
+background. It did not use the LiDAR checkpoint or measure RGB-D
+recognition accuracy.

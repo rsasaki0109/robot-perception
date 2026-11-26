@@ -1,11 +1,14 @@
+import importlib.util
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 
 import numpy as np
 
-from detect import mid360_points, pedestrian_detections, realsense_points, replace_detections
+from detect import (cluster_predictor, mid360_points, pedestrian_detections,
+                    realsense_points, replace_detections)
 
 
 class DetectorAdapterTests(unittest.TestCase):
@@ -29,6 +32,16 @@ class DetectorAdapterTests(unittest.TestCase):
         calibration["fx"] = 0
         with self.assertRaises(ValueError):
             realsense_points(np.ones((1, 1)), calibration)
+
+    @unittest.skipUnless(importlib.util.find_spec("scipy"), "cluster backend requires SciPy")
+    def test_cluster_detects_person_size_returns_and_ignores_floor(self):
+        predict = cluster_predictor(SimpleNamespace(floor_z_m=-0.5, score_min=0.3))
+        points = np.array([[1.02, 0.01, -0.2, 0], [1.04, 0.03, 0.2, 0],
+                           [1.08, 0.08, 0.8, 0], [1.1, 0.1, 1.0, 0],
+                           [1.1, 0.1, -0.49, 0]])
+        detections = predict(points)
+        self.assertEqual(len(detections), 1)
+        np.testing.assert_allclose(detections[0]["position"], [1.06, 0.055, 0.4])
 
     def test_pedestrian_boxes_and_record_metadata(self):
         detections = pedestrian_detections(

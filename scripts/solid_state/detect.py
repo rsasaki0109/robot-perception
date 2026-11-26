@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run an OpenPCDet pedestrian detector on recorded Mid-360 or RealSense data."""
+"""Run a pedestrian detector on recorded Mid-360 or RealSense data."""
 
 from __future__ import annotations
 
@@ -182,24 +182,71 @@ def coda_cpu_predictor(args):
     return predict
 
 
+def cluster_predictor(args):
+    """Person-size geometric baseline using example 151's scan-only rules."""
+    try:
+        from scipy.ndimage import label
+    except ImportError as error:
+        raise RuntimeError("cluster baseline requires SciPy") from error
+
+    cell_m = 0.15
+    range_m = 15.0
+    half_grid = math.ceil(range_m / cell_m)
+
+    def predict(points):
+        height_m = points[:, 2] - args.floor_z_m
+        accepted = ((height_m >= 0.15) & (height_m <= 1.9)
+                    & (np.linalg.norm(points[:, :2], axis=1) < range_m))
+        xyz = points[accepted, :3]
+        if not len(xyz):
+            return []
+        cells = np.floor(xyz[:, :2] / cell_m).astype(int) + half_grid
+        occupied = np.zeros((2 * half_grid, 2 * half_grid), dtype=bool)
+        occupied[cells[:, 0], cells[:, 1]] = True
+        labels, _ = label(occupied, structure=np.ones((3, 3), dtype=bool))
+        point_labels = labels[cells[:, 0], cells[:, 1]]
+        order = np.argsort(point_labels, kind="stable")
+        boundaries = np.flatnonzero(np.diff(point_labels[order])) + 1
+        boxes = []
+        for indices in np.split(order, boundaries):
+            if len(indices) < 4:
+                continue
+            group = xyz[indices]
+            lo, hi = group.min(axis=0), group.max(axis=0)
+            size = hi - lo
+            if np.linalg.norm(size[:2]) > 1.0 or size[2] < 0.2:
+                continue
+            boxes.append([*((lo + hi) / 2), *np.maximum(size, cell_m), 0.0])
+        return pedestrian_detections(boxes, [1.0] * len(boxes), [1] * len(boxes),
+                                     1, args.score_min, 0.0)
+
+    return predict
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sensor", choices=("mid360", "realsense"), required=True)
     parser.add_argument("--scans", type=Path, required=True)
     parser.add_argument("--template", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--backend", choices=("openpcdet", "coda-cpu"), default="openpcdet")
+    parser.add_argument("--backend", choices=("openpcdet", "coda-cpu", "cluster"), default="openpcdet")
     parser.add_argument("--cfg", help="matching OpenPCDet config")
     parser.add_argument("--cpu-threads", type=int, default=1)
     parser.add_argument("--nms-threshold", type=float, default=0.3,
                         help="CODa CPU rotated BEV NMS threshold")
-    parser.add_argument("--ckpt", type=Path, required=True)
+    parser.add_argument("--ckpt", type=Path)
+    parser.add_argument("--floor-z-m", type=float, help="cluster floor height in the input frame")
     parser.add_argument("--calibration", type=Path, help="rectified RealSense intrinsics and mount")
     parser.add_argument("--lidar-sensor-id", type=int, default=1)
     parser.add_argument("--score-min", type=float, default=0.3)
     parser.add_argument("--intensity-scale", type=float, default=1.0)
     parser.add_argument("--z-offset-m", type=float, default=0.0)
     args = parser.parse_args()
+    if args.backend == "cluster":
+        if args.floor_z_m is None or not math.isfinite(args.floor_z_m):
+            parser.error("--floor-z-m is required and must be finite for the cluster backend")
+    elif args.ckpt is None:
+        parser.error("--ckpt is required for learned detectors")
     if args.backend == "openpcdet" and args.cfg is None:
         parser.error("--cfg is required with --backend openpcdet")
     if args.cpu_threads < 1 or not 0 <= args.nms_threshold <= 1:
@@ -223,7 +270,9 @@ def main():
             return mid360_points(args.scans / f"{sequence:06d}.bin", args.intensity_scale)
 
     try:
-        predict = (coda_cpu_predictor if args.backend == "coda-cpu" else openpcdet_predictor)(args)
+        backends = {"openpcdet": openpcdet_predictor, "coda-cpu": coda_cpu_predictor,
+                    "cluster": cluster_predictor}
+        predict = backends[args.backend](args)
         times_ms = []
 
         def timed_predict(points):
