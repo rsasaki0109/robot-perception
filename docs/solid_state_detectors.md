@@ -42,6 +42,27 @@ offset for output boxes. A KITTI checkpoint is a transfer baseline with a
 front-facing, spinning-LiDAR training distribution. Its output does not
 establish full-surround Mid-360 coverage.
 
+## Run the published CODa CenterPoint on CPU
+
+The `coda-cpu` backend uses the existing
+[CODa CPU detector](../scripts/coda/detect_lidar_cpu.py) and its built-in
+configuration. Install CPU PyTorch 2.5.1 or newer, NumPy and Shapely. The
+[pedestrian checkpoint](https://huggingface.co/rsasaki0109/coda-ped-centerpoint)
+used for ETH-2 has SHA-256
+`8fe8ac00fcde6c28165834b0a4a919f53683ed8911e91ae2e1bd2e912072463b`.
+
+```sh
+python "$repo/scripts/solid_state/detect.py" \
+  --backend coda-cpu --sensor mid360 --scans "$sequence/scans" \
+  --template "$sequence/baseline.jsonl" --out "$sequence/centerpoint.jsonl" \
+  --ckpt /path/to/coda_ped_centerpoint_ft.pth \
+  --z-offset-m -0.25 --score-min 0.5 --nms-threshold 0.3 --cpu-threads 1
+```
+
+This checkpoint uses XYZ features. The CPU path runs without CUDA and
+uses the model's own voxel geometry and rotated NMS. The PointPillars
+command above uses the CUDA backend.
+
 ## RealSense depth recordings
 
 Save each **rectified** depth image as a 2D NumPy array named by its
@@ -90,3 +111,39 @@ For detection recall and distance/occlusion breakdowns, use independent
 labels. Keep Mid-360 and RealSense results separate because range, field of
 view, sampling and return features differ. See the
 [ETH-2 benchmark](../benchmarks/grandtour_eth2/README.md).
+
+## Real-recording validation on GrandTour ETH-2
+
+Used the [public mission `2024-10-01-11-47-44`](https://huggingface.co/datasets/leggedrobotics/grand_tour_dataset/tree/af6b6dd6f91696f8ec8c98134e195514834911b2/2024-10-01-11-47-44)
+and the published pedestrian CenterPoint checkpoint above. Mid-360 used
+scans 3700–3900 inclusive. Each cloud combines three undistorted sweeps
+in the current base frame, with the recorded mount and interpolated
+odometry as in `grandtour.py`. Scan timestamps matched the bundled ETH-2
+records. Both replays used LiDAR only, the same setup and the benchmark's
+default tracker with initial velocity variance 1, acceleration spectral
+density 0.5 and evaluation match distance 1 m.
+
+| Mid-360 input, 201 scans | Detection boxes | Matched annotated objects | Track coverage | ID switches |
+| --- | ---: | ---: | ---: | ---: |
+| Bundled PV-RCNN detections | 3,740 | 2,826 / 2,855 | 99.0% | 22 |
+| Fresh CenterPoint inference, score ≥ 0.5 | 3,066 | 2,317 / 2,855 | 81.2% | 97 |
+
+The reference annotations are derived from the bundled detector, so the
+comparison measures tracking against those annotations and favors the
+bundled detections. The CPU backend took 1.114 s median and 1.249 s p95
+per Mid-360 scan on one PyTorch thread. The timings cover preprocessing,
+model execution and box conversion, excluding file I/O and tracking.
+That does not meet the sensor's 100 ms scan interval.
+
+For the RealSense smoke run, the same mission's front-upper D435i stream
+provided 12 frames (5549–5560). We decoded the 848×480 uint16 PNGs as
+millimetres and used the recording's zero-distortion intrinsics and inverse
+of its base-to-optical mount transform. The dominant floor bin was
+−0.50 m in both base-frame point clouds near the start of the window.
+CenterPoint produced no detections at score ≥ 0.5 (CPU median 1.343 s).
+At score ≥ 0.1 it produced nine low-score boxes, with max score 0.201 and
+zero confirmed tracks. All 12 frames replayed at both thresholds.
+This checks the recorded-depth path and the spinning-LiDAR checkpoint's
+behavior on that clip. It does not establish RealSense detection accuracy.
+The [sensor setup](https://grand-tour.leggedrobotics.com/setup) describes
+the rig.

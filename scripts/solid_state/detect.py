@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import time
@@ -149,13 +150,49 @@ def openpcdet_predictor(args):
     return predict
 
 
+def coda_cpu_predictor(args):
+    """Use the existing CPU implementation of the CODa first-stage models."""
+    module_path = Path(__file__).resolve().parents[1] / "coda" / "detect_lidar_cpu.py"
+    spec = importlib.util.spec_from_file_location("detect_lidar_cpu", module_path)
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except ImportError as error:
+        raise RuntimeError("CODa CPU inference requires PyTorch and Shapely") from error
+
+    module.torch.set_num_threads(args.cpu_threads)
+    checkpoint = module.torch.load(args.ckpt, map_location="cpu", weights_only=True)
+    state = {key: value.float() for key, value in checkpoint["model_state"].items()
+             if value.is_floating_point()}
+    class_names, point_range = module.model_config(state)
+    pedestrian_id = class_names.index("Pedestrian")
+
+    def predict(points):
+        shifted = points.copy()
+        shifted[:, 2] += args.z_offset_m
+        # The CODa model itself applies an additional training-time shift.
+        grid_points = shifted[:, :3] + [0, 0, module.SHIFT_Z]
+        inside = np.all((grid_points >= point_range[:3]) & (grid_points < point_range[3:]), axis=1)
+        if not inside.any():
+            return []
+        boxes, scores, labels = module.detect(shifted, state, args.score_min, args.nms_threshold)
+        return pedestrian_detections(boxes, scores, labels, pedestrian_id, args.score_min,
+                                     args.z_offset_m)
+
+    return predict
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sensor", choices=("mid360", "realsense"), required=True)
     parser.add_argument("--scans", type=Path, required=True)
     parser.add_argument("--template", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--cfg", required=True)
+    parser.add_argument("--backend", choices=("openpcdet", "coda-cpu"), default="openpcdet")
+    parser.add_argument("--cfg", help="matching OpenPCDet config")
+    parser.add_argument("--cpu-threads", type=int, default=1)
+    parser.add_argument("--nms-threshold", type=float, default=0.3,
+                        help="CODa CPU rotated BEV NMS threshold")
     parser.add_argument("--ckpt", type=Path, required=True)
     parser.add_argument("--calibration", type=Path, help="rectified RealSense intrinsics and mount")
     parser.add_argument("--lidar-sensor-id", type=int, default=1)
@@ -163,6 +200,10 @@ def main():
     parser.add_argument("--intensity-scale", type=float, default=1.0)
     parser.add_argument("--z-offset-m", type=float, default=0.0)
     args = parser.parse_args()
+    if args.backend == "openpcdet" and args.cfg is None:
+        parser.error("--cfg is required with --backend openpcdet")
+    if args.cpu_threads < 1 or not 0 <= args.nms_threshold <= 1:
+        parser.error("CPU thread count must be positive and NMS threshold must be in [0, 1]")
     if not 0 <= args.score_min <= 1 or not math.isfinite(args.z_offset_m):
         parser.error("score must be in [0, 1] and z offset must be finite")
     if not math.isfinite(args.intensity_scale) or args.intensity_scale <= 0:
@@ -182,7 +223,7 @@ def main():
             return mid360_points(args.scans / f"{sequence:06d}.bin", args.intensity_scale)
 
     try:
-        predict = openpcdet_predictor(args)
+        predict = (coda_cpu_predictor if args.backend == "coda-cpu" else openpcdet_predictor)(args)
         times_ms = []
 
         def timed_predict(points):
