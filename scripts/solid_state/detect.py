@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""Run an OpenPCDet pedestrian detector on recorded Mid-360 or RealSense data."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import time
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+import numpy as np
+
+
+def mid360_points(path, intensity_scale):
+    flat = np.fromfile(path, dtype="<f4")
+    if flat.size % 4 or path.stat().st_size % 16:
+        raise ValueError(f"{path}: expected packed float32 XYZI")
+    points = flat.reshape(-1, 4)
+    points = points[np.isfinite(points).all(axis=1)]
+    points[:, 3] *= intensity_scale
+    return points
+
+
+def realsense_points(depth, calibration):
+    """Unproject rectified optical depth and transform to detector input axes."""
+    fx, fy, cx, cy, scale = (
+        float(calibration[key]) for key in ("fx", "fy", "cx", "cy", "depth_scale_m")
+    )
+    rotation = np.asarray(calibration["optical_to_input"], dtype=np.float64)
+    if (
+        depth.ndim != 2
+        or not np.isfinite([fx, fy, cx, cy, scale]).all()
+        or min(fx, fy, scale) <= 0
+        or rotation.shape != (4, 4)
+        or not np.isfinite(rotation).all()
+        or not np.allclose(rotation[3], [0, 0, 0, 1])
+        or not np.allclose(rotation[:3, :3].T @ rotation[:3, :3], np.eye(3), atol=1e-6)
+        or not np.isclose(np.linalg.det(rotation[:3, :3]), 1.0)
+    ):
+        raise ValueError("expected rectified 2D depth, valid intrinsics and a rigid optical_to_input")
+    z_m = depth.astype(np.float64) * scale
+    v, u = np.nonzero(np.isfinite(z_m) & (z_m > 0))
+    z_m = z_m[v, u]
+    optical = np.column_stack(((u - cx) * z_m / fx, (v - cy) * z_m / fy, z_m))
+    xyz = optical @ rotation[:3, :3].T + rotation[:3, 3]
+    return np.column_stack((xyz, np.zeros(len(xyz)))).astype(np.float32)
+
+
+def pedestrian_detections(boxes, scores, labels, pedestrian_id, score_min, z_offset_m):
+    """Translate OpenPCDet boxes into tracker class 2 detections."""
+    if len(boxes) != len(scores) or len(boxes) != len(labels):
+        raise ValueError("prediction arrays differ in length")
+    detections = []
+    for box, score, label in zip(boxes, scores, labels):
+        if label != pedestrian_id or not np.isfinite(score) or not score_min <= score <= 1:
+            continue
+        center = np.asarray(box[:3], dtype=np.float64).copy()
+        dimensions = np.asarray(box[3:6], dtype=np.float64)
+        yaw = float(box[6])
+        if not np.isfinite(box[:7]).all() or np.any(dimensions <= 0):
+            continue
+        center[2] -= z_offset_m
+        signs = np.array([[x, y, z] for z in (-1, 1)
+                          for x, y in ((1, 1), (1, -1), (-1, -1), (-1, 1))])
+        corners = signs * dimensions / 2
+        cos, sin = math.cos(yaw), math.sin(yaw)
+        corners[:, :2] = corners[:, :2] @ np.array([[cos, sin], [-sin, cos]])
+        length, width, height = dimensions.tolist()
+        detections.append({
+            "position": center.tolist(),
+            "covariance": (np.eye(3) * 0.04).ravel().tolist(),
+            "class": 2,
+            "score": float(score),
+            "shape": {"height": height, "width": width, "length": length,
+                      "rotation_y": 0.0, "corners": (corners + center).ravel().tolist()},
+        })
+    return detections
+
+
+def replace_detections(template, output, lidar_sensor_id, read_points, predict):
+    """Replace one sensor's detections while preserving timestamps and other records."""
+    count = 0
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = None
+    try:
+        with template.open() as source, NamedTemporaryFile(
+            mode="w", dir=output.parent, delete=False,
+        ) as destination:
+            temp_path = Path(destination.name)
+            for line in source:
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                if record["type"] == "lidar_batch" and record["sensor_id"] == lidar_sensor_id:
+                    record["detections"] = predict(read_points(record["sequence"]))
+                    count += 1
+                destination.write(json.dumps(record, allow_nan=False) + "\n")
+        if count == 0:
+            raise ValueError(f"no lidar_batch records for sensor {lidar_sensor_id}")
+        temp_path.replace(output)
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+    return count
+
+
+def openpcdet_predictor(args):
+    try:
+        import torch
+        from pcdet.config import cfg, cfg_from_yaml_file
+        from pcdet.datasets import DatasetTemplate
+        from pcdet.models import build_network, load_data_to_gpu
+        from pcdet.utils import common_utils
+    except ImportError as error:
+        raise RuntimeError("run inference in an OpenPCDet environment with CUDA") from error
+    if not torch.cuda.is_available():
+        raise RuntimeError("OpenPCDet inference requires a CUDA device")
+
+    cfg_from_yaml_file(args.cfg, cfg)
+    pedestrian_id = list(cfg.CLASS_NAMES).index("Pedestrian") + 1
+    logger = common_utils.create_logger()
+    dataset = DatasetTemplate(
+        dataset_cfg=cfg.DATA_CONFIG, class_names=cfg.CLASS_NAMES,
+        training=False, root_path=None, logger=logger,
+    )
+    model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=dataset)
+    model.load_params_from_file(filename=str(args.ckpt), logger=logger, to_cpu=True)
+    model.cuda().eval()
+
+    def predict(points):
+        if not len(points):
+            return []
+        shifted = points.copy()
+        shifted[:, 2] += args.z_offset_m
+        batch = dataset.collate_batch([dataset.prepare_data({"points": shifted, "frame_id": 0})])
+        if not len(batch["voxels"]):
+            return []
+        load_data_to_gpu(batch)
+        with torch.no_grad():
+            predictions, _ = model.forward(batch)
+        result = predictions[0]
+        boxes, scores, labels = (result[key].cpu().numpy() for key in
+                                 ("pred_boxes", "pred_scores", "pred_labels"))
+        return pedestrian_detections(boxes, scores, labels, pedestrian_id, args.score_min,
+                                     args.z_offset_m)
+
+    return predict
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--sensor", choices=("mid360", "realsense"), required=True)
+    parser.add_argument("--scans", type=Path, required=True)
+    parser.add_argument("--template", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--cfg", required=True)
+    parser.add_argument("--ckpt", type=Path, required=True)
+    parser.add_argument("--calibration", type=Path, help="rectified RealSense intrinsics and mount")
+    parser.add_argument("--lidar-sensor-id", type=int, default=1)
+    parser.add_argument("--score-min", type=float, default=0.3)
+    parser.add_argument("--intensity-scale", type=float, default=1.0)
+    parser.add_argument("--z-offset-m", type=float, default=0.0)
+    args = parser.parse_args()
+    if not 0 <= args.score_min <= 1 or not math.isfinite(args.z_offset_m):
+        parser.error("score must be in [0, 1] and z offset must be finite")
+    if not math.isfinite(args.intensity_scale) or args.intensity_scale <= 0:
+        parser.error("intensity scale must be finite and positive")
+    if args.template.resolve() == args.out.resolve():
+        parser.error("choose an output path different from the template")
+    if args.sensor == "realsense":
+        if args.calibration is None:
+            parser.error("--calibration is required for RealSense")
+        calibration = json.loads(args.calibration.read_text())
+
+        def read_points(sequence):
+            depth = np.load(args.scans / f"{sequence:06d}.npy", allow_pickle=False)
+            return realsense_points(depth, calibration)
+    else:
+        def read_points(sequence):
+            return mid360_points(args.scans / f"{sequence:06d}.bin", args.intensity_scale)
+
+    try:
+        predict = openpcdet_predictor(args)
+        times_ms = []
+
+        def timed_predict(points):
+            start = time.perf_counter()
+            detections = predict(points)
+            times_ms.append((time.perf_counter() - start) * 1000)
+            return detections
+
+        count = replace_detections(args.template, args.out, args.lidar_sensor_id,
+                                   read_points, timed_predict)
+    except (OSError, ValueError, RuntimeError) as error:
+        parser.exit(1, f"{error}\n")
+    median_ms, p95_ms = np.percentile(times_ms, [50, 95])
+    print(f"{count} {args.sensor} scans -> {args.out}")
+    print(f"Preprocess + inference + box export: median {median_ms:.1f} ms, p95 {p95_ms:.1f} ms")
+
+
+if __name__ == "__main__":
+    main()

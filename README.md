@@ -134,6 +134,7 @@ flowchart TD
 
 ## Documentation
 
+- [Mid-360 and RealSense detector adapter](docs/solid_state_detectors.md)
 - [`docs/usage.md`](docs/usage.md): CLI, Rust API, input/output, algorithm overview
 - [`docs/architecture.md`](docs/architecture.md): design, scope, assumptions, limitations, references
 - [`docs/algorithms.md`](docs/algorithms.md), [`docs/data-format.md`](docs/data-format.md), [`docs/camera-lidar.md`](docs/camera-lidar.md)
