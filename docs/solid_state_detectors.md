@@ -215,3 +215,70 @@ and 5.49 m. The pilot uses the shared base frame without compensating
 the 24.9 ms offset. The ranges are unvalidated samples and may include
 background. It did not use the LiDAR checkpoint or measure RGB-D
 recognition accuracy.
+
+## Paired Mid-360 and Hesai XT32 on ETH-2
+
+The same ANYmal D and Boxi payload recorded both sensors. Use the pinned
+[ETH-2 mission](https://huggingface.co/datasets/leggedrobotics/grand_tour_dataset/tree/af6b6dd6f91696f8ec8c98134e195514834911b2/2024-10-01-11-47-44/data).
+Unpack `livox_points_undistorted.tar`, `hesai_points_undistorted.tar`,
+`anymal_state_odometry.tar`, and `tf.tar` into the Zarr `data` directory
+with the mission's `.zgroup` file.
+
+```sh
+python scripts/grandtour/pair_lidars.py --data /path/to/mission/data \
+  --template eth2/inputs.jsonl --truth eth2/truth.jsonl --out eth2/paired
+```
+
+The pairing script uses the nearest unused XT32 scan within 50 ms, keeps
+each sensor's single undistorted sweep, and applies the calibrated mounts
+and odometry to express both sweeps in the Mid-360 scan's base frame. It
+clips points and annotated person centers to 0.5–8 m planar range and to the
+intersection of the sensors' nominal elevation intervals in their own
+frames (Mid-360 −7° to +52°, XT32 −16° to +15°). The result has 201 pairs.
+The XT32 timestamps precede Mid-360 by 26.8 ms median (absolute p95 27.1 ms,
+max 27.8 ms). Odometry accounts for robot motion. Pedestrians can move
+between acquisitions, and the angular crop cannot rule out occlusion.
+See the [rig calibration](https://grand-tour.leggedrobotics.com/setup)
+and [XT32 manual](https://hesai.pousion.cn/wp-content/uploads/2023/03/XT32_User_Manual_X01-en-220410.pdf).
+
+Use `--scans eth2/paired/mid360 --sensor mid360` or
+`--scans eth2/paired/xt32 --sensor xt32` with the detector and the paired
+`inputs.jsonl` template. Reuse the original ETH-2 `setup.json` and score
+against the paired `truth.jsonl`. The crop retained all 2,855 original
+annotation instances. Both sensors use the same tracker settings as the
+previous comparison. The cluster baseline uses the same −0.50 m floor
+assumption and the CPU CenterPoint backend uses XYZ only, with the same
+checkpoint, z offset, score threshold, and NMS.
+
+| Sensor | Detector | Median points per cropped sweep | Boxes | Track coverage | ID switches | Detector median / p95 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Mid-360 | Cluster | 6,300 | 4,330 | 80.0% | 76 | 1.7 / 2.0 ms |
+| XT32 | Cluster | 36,205 | 3,879 | 63.0% | 102 | 4.6 / 6.2 ms |
+| Mid-360 | CenterPoint CPU | 6,300 | 1,648 | 67.7% | 56 | 962 / 1,078 ms |
+| XT32 | CenterPoint CPU | 36,205 | 2,295 | 60.8% | 101 | 999 / 1,090 ms |
+
+The XT32 had 5.7 times as many points in the crop. Its track coverage
+against the supplied annotations was lower for both detector settings.
+The labels were built from a Mid-360 baseline, and the two sensor mounts
+and scan patterns expose different surfaces. These numbers measure
+transfer under fixed detector settings on this clip. They cannot establish
+which hardware has better person-detection recall.
+
+## Unitree L2 official indoor sample
+
+The [official L2 sample](https://www.unitree.com/download/L2/) contains
+2,807 `/unilidar/cloud` PointCloud2 messages. With NumPy and `rosbags`
+installed, inspect it and optionally export a scan as little-endian XYZI.
+
+```sh
+python scripts/solid_state/probe_l2.py "L2 Indoor Point Cloud Data.bag" \
+  --export-first /path/to/000000.bin
+```
+
+The first 20 scans contain 5,243–5,341 finite returns per scan in
+`unilidar_lidar`. The closest return was 0.095 m from the sensor and
+19 of 20 scans had at least one return below 0.5 m. Those are return
+distances, with no people labels or classification of near returns.
+The PointCloud2 messages also carry ring and per-point time; the XYZI
+export leaves those fields out. The sample's SHA-256 is
+`2f1d7c01493299e8a310af3f881d615358c17331cac9b2426e18c8ca90149983`.

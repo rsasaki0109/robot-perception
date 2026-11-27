@@ -39,7 +39,6 @@ import json
 import math
 from pathlib import Path
 
-import cv2
 import numpy as np
 import zarr
 from scipy.spatial.transform import Rotation
@@ -99,6 +98,8 @@ def ns(seconds: float) -> int:
 
 
 def prepare(args: argparse.Namespace) -> None:
+    import cv2
+
     root = zarr.open_group(str(args.mission / "data"), mode="r")
     tf = json.loads((args.mission / "data" / "tf" / ".zattrs").read_text())["tf"]
     camera = root[args.camera]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a pedestrian detector on recorded Mid-360 or RealSense data."""
+"""Run a pedestrian detector on recorded LiDAR or RealSense data."""
 
 from __future__ import annotations
 
@@ -225,7 +225,7 @@ def cluster_predictor(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--sensor", choices=("mid360", "realsense"), required=True)
+    parser.add_argument("--sensor", choices=("mid360", "xt32", "realsense"), required=True)
     parser.add_argument("--scans", type=Path, required=True)
     parser.add_argument("--template", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)

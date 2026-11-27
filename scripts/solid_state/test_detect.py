@@ -7,6 +7,8 @@ import unittest
 
 import numpy as np
 
+from probe_l2 import packed_xyzi
+
 from detect import (cluster_predictor, mid360_points, pedestrian_detections,
                     realsense_points, replace_detections)
 
@@ -42,6 +44,16 @@ class DetectorAdapterTests(unittest.TestCase):
         detections = predict(points)
         self.assertEqual(len(detections), 1)
         np.testing.assert_allclose(detections[0]["position"], [1.06, 0.055, 0.4])
+
+    def test_l2_uses_offsets_and_row_padding(self):
+        import struct
+
+        fields = [SimpleNamespace(name=name, datatype=7, count=1, offset=offset)
+                  for name, offset in zip(("x", "y", "z", "intensity"), (0, 4, 8, 16))]
+        raw = b"".join(struct.pack("<3f4xf", i, 2, 3, 4) + bytes(16) for i in (1, 5))
+        cloud = SimpleNamespace(fields=fields, point_step=32, row_step=36,
+                                width=1, height=2, is_bigendian=False, data=raw)
+        np.testing.assert_allclose(packed_xyzi(cloud), [[1, 2, 3, 4], [5, 2, 3, 4]])
 
     def test_pedestrian_boxes_and_record_metadata(self):
         detections = pedestrian_detections(
