@@ -305,6 +305,66 @@ timestamps, and pedestrians can still move between captures. These counts
 measure agreement with visible 2D boxes on this clip. They do not estimate
 full-field recall, 3D localization accuracy, or tracking quality.
 
+### ETH-2 front-camera evaluation by range
+
+The expanded review uses frames 3700 through 3900 at intervals of 20 scans
+(about two seconds). An AI reviewer drew
+[55 visible-person boxes](../benchmarks/grandtour_eth2/camera_labels_eth2.json)
+across 11 images without detection overlays. The fixed 640 × 480 review
+region is x = 65–582, y = 85–280. The visible-height cutoff is 80 px. Some
+nearby boxes are clipped at the top of the review strip. Ambiguous figures
+and distant groups have ignore regions. The review includes the three pilot
+frames and repeatedly observes some of the same people in one crowded hallway.
+
+For range estimates, project the synchronized D435i depth pixels into the
+Alphasense image using the recorded intrinsics, mounts, and robot odometry.
+Use the median planar range of pixels in the central 40% of each box along
+each axis. Require at least 25 samples and a range interquartile spread of
+at most 0.6 m. The depth frames lead the color frames by 23–25 ms. The
+reference torso point must pass the same range and elevation masks as the
+paired LiDAR data. This yielded 46 labels for common-crop range scoring,
+one outside the crop, and eight without a reliable range. The method can
+pick up an occluder or background surface, and a torso test does not
+establish that both LiDARs saw the same body surfaces.
+
+| Sensor | Detector | TP / FP / FN at IoU 0.30 | Precision | Recall | TP at IoU 0.50 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Mid-360 | Cluster | 24 / 22 / 31 | 52.2% | 43.6% | 22 |
+| XT32 | Cluster | 18 / 19 / 37 | 48.6% | 32.7% | 15 |
+| Mid-360 | CenterPoint CPU | 25 / 4 / 30 | 86.2% | 45.5% | 19 |
+| XT32 | CenterPoint CPU | 23 / 1 / 32 | 95.8% | 41.8% | 20 |
+
+| Sensor | Detector | 0.5–4 m | 4–6 m | 6–8 m | All 46 in common crop |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Mid-360 | Cluster | 3/5 | 10/19 | 7/22 | 20/46 |
+| XT32 | Cluster | 2/5 | 7/19 | 6/22 | 15/46 |
+| Mid-360 | CenterPoint CPU | 2/5 | 5/19 | 17/22 | 24/46 |
+| XT32 | CenterPoint CPU | 2/5 | 6/19 | 10/22 | 18/46 |
+
+The range table counts matches at IoU 0.30. With CenterPoint, Mid-360 had
+more matches across the common-crop labels, driven by the 6–8 m band.
+XT32 had higher precision across all 55 labels and one more match when
+the IoU threshold increased to 0.50. This single hallway clip supports a
+comparison of the configured detectors in the reviewed front-camera
+region. Full-azimuth and multi-mission results require annotated side
+and rear observations and additional scenes.
+
+Use calibrated D435i PNGs from the mission's `images/depth_camera_front_upper.tar`
+and unpack that stream's metadata from its separate `data/` archive.
+The [saved ranges](../benchmarks/grandtour_eth2/camera_ranges_eth2.json)
+and [per-frame scores](../benchmarks/grandtour_eth2/camera_scores_eth2.json)
+include the depth sample counts and both IoU thresholds.
+
+```sh
+python scripts/grandtour/camera_label_ranges.py --data /path/to/mission/data \
+  --depth-images /path/to/mission/images/depth_camera_front_upper \
+  --labels benchmarks/grandtour_eth2/camera_labels_eth2.json \
+  --pairs eth2/paired/pairs.jsonl --out eth2/camera_ranges.json
+python scripts/grandtour/score_camera_labels.py --data /path/to/mission/data \
+  --labels eth2/camera_ranges.json --setup benchmarks/grandtour_eth2/setup.json.gz \
+  --iou 0.30 eth2/paired/{mid360,xt32}-{cluster,centerpoint}.jsonl
+```
+
 ## Unitree L2 official indoor sample
 
 The [official L2 sample](https://www.unitree.com/download/L2/) contains

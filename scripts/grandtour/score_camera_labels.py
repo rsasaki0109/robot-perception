@@ -12,16 +12,21 @@ import zarr
 from grandtour import Odometry
 
 
-def project(corners, optical_from_base, intrinsics, distortion, scale):
-    optical = corners @ optical_from_base[:3, :3].T + optical_from_base[:3, 3]
-    if np.any(optical[:, 2] <= 0):
-        return None
-    xy = optical[:, :2] / optical[:, 2, None]
+def project_pixels(points, optical_from_base, intrinsics, distortion, scale):
+    optical = points @ optical_from_base[:3, :3].T + optical_from_base[:3, 3]
+    front = optical[:, 2] > 0
+    xy = optical[front, :2] / optical[front, 2, None]
     radius = np.linalg.norm(xy, axis=1)
     theta = np.arctan(radius)
     angle = theta * np.polynomial.polynomial.polyval(theta**2, [1, *distortion])
     uv = xy * (angle / np.maximum(radius, 1e-12))[:, None]
-    uv = (uv @ intrinsics[:2, :2].T + intrinsics[:2, 2]) * scale
+    return (uv @ intrinsics[:2, :2].T + intrinsics[:2, 2]) * scale, front
+
+
+def project(corners, optical_from_base, intrinsics, distortion, scale):
+    uv, front = project_pixels(corners, optical_from_base, intrinsics, distortion, scale)
+    if not front.all():
+        return None
     return np.r_[uv.min(axis=0), uv.max(axis=0)]
 
 
@@ -37,11 +42,11 @@ def iou(left, right):
     return float(intersection / union)
 
 
-def score(predictions, labels, ignore):
+def score(predictions, labels, ignore, threshold=0.30):
     overlaps = np.array(
         [[iou(prediction, label) for label in labels] for prediction in predictions]
     ).reshape(len(predictions), len(labels))
-    eligible = overlaps >= 0.30
+    eligible = overlaps >= threshold
     # Prefer the largest number of matches, breaking ties by total IoU.
     rows, cols = linear_sum_assignment(
         eligible * (len(labels) + overlaps), maximize=True
@@ -52,7 +57,9 @@ def score(predictions, labels, ignore):
         for row, prediction in enumerate(predictions)
         if row not in matched
     )
-    return len(matched), len(predictions) - len(matched) - ignored, len(labels) - len(matched)
+    matched_labels = {int(col) for row, col in zip(rows, cols) if row in matched}
+    return (len(matched), len(predictions) - len(matched) - ignored,
+            len(labels) - len(matched)), matched_labels
 
 
 def main():
@@ -60,8 +67,11 @@ def main():
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--labels", type=Path, required=True)
     parser.add_argument("--setup", type=Path, required=True)
+    parser.add_argument("--iou", type=float, default=0.30)
     parser.add_argument("batches", type=Path, nargs="+")
     args = parser.parse_args()
+    if not 0 < args.iou <= 1:
+        parser.error("--iou must be in (0, 1]")
     annotation = json.loads(args.labels.read_text())
     frames = {int(index): frame for index, frame in annotation["frames"].items()}
     open_setup = gzip.open if args.setup.suffix == ".gz" else open
@@ -77,6 +87,7 @@ def main():
     roi = np.array(annotation["roi_xyxy_px"])
     for path in args.batches:
         counts = {}
+        distance = {}
         for line in path.read_text().splitlines():
             batch = json.loads(line)
             if batch["type"] != "lidar_batch" or batch["sequence"] not in frames:
@@ -98,11 +109,18 @@ def main():
                 if box is not None and contains(roi, (box[:2] + box[2:]) / 2):
                     predictions.append(box)
             frame = frames[index]
-            counts[index] = score(predictions, np.array(frame["persons"]), np.array(frame["ignore"]))
+            counts[index], matched = score(
+                predictions, np.array(frame["persons"]), np.array(frame["ignore"]), args.iou
+            )
+            for label_index, reference in enumerate(frame.get("range_reference", [])):
+                band = reference["band"]
+                group = distance.setdefault(band, [0, 0])
+                group[0] += label_index in matched
+                group[1] += 1
         if counts.keys() != frames.keys():
             raise ValueError(f"{path}: missing annotated frames {sorted(frames.keys() - counts.keys())}")
         tp, fp, fn = np.sum(list(counts.values()), axis=0).tolist()
-        print(json.dumps(dict(file=str(path), tp=tp, fp=fp, fn=fn, frames=counts)))
+        print(json.dumps(dict(file=str(path), tp=tp, fp=fp, fn=fn, frames=counts, range_recall=distance)))
 
 
 if __name__ == "__main__":
