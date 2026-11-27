@@ -264,6 +264,47 @@ and scan patterns expose different surfaces. These numbers measure
 transfer under fixed detector settings on this clip. They cannot establish
 which hardware has better person-detection recall.
 
+### Camera-only annotation pilot
+
+An AI reviewer drew visible-person boxes from three raw
+`alphasense_front_center` images (3700, 3740, 3780) before inspecting detector
+outputs. The [annotations](../benchmarks/grandtour_eth2/camera_labels_pilot.json)
+contain 19 person instances in the front-camera region of interest, with a
+minimum visible height of 120 px at 960 × 720. Small distant figures and
+people whose outlines were difficult to separate were marked as ignore regions.
+
+Unpack `alphasense_front_center.tar` into the same mission data directory.
+Use the detector's LiDAR batch JSONL files from the paired runs.
+
+```sh
+python scripts/grandtour/score_camera_labels.py --data /path/to/mission/data \
+  --labels benchmarks/grandtour_eth2/camera_labels_pilot.json \
+  --setup benchmarks/grandtour_eth2/setup.json.gz \
+  eth2/paired/mid360-cluster.jsonl eth2/paired/mid360-centerpoint.jsonl \
+  eth2/paired/xt32-cluster.jsonl eth2/paired/xt32-centerpoint.jsonl
+```
+
+The scorer transforms each 3D box from the paired Mid-360 base frame to
+the camera frame at exposure time using robot odometry, then projects its
+corners with the raw fisheye intrinsics. It skips boxes with corners at or
+behind the camera plane and boxes whose projected center falls outside the ROI.
+It matches boxes one-to-one at 2D IoU ≥ 0.30. An unmatched prediction whose
+center falls in an ignore region does not count as a false positive.
+
+| Sensor | Detector | Matched | Unmatched predictions | Missed labels | Recall |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Mid-360 | Cluster | 12 | 3 | 7 | 63.2% |
+| XT32 | Cluster | 8 | 1 | 11 | 42.1% |
+| Mid-360 | CenterPoint CPU | 13 | 0 | 6 | 68.4% |
+| XT32 | CenterPoint CPU | 6 | 0 | 13 | 31.6% |
+
+The three images can show the same people multiple times. The camera labels
+have no independent range measurements, so some people can fall outside
+the common LiDAR crop. Odometry compensates for robot motion between
+timestamps, and pedestrians can still move between captures. These counts
+measure agreement with visible 2D boxes on this clip. They do not estimate
+full-field recall, 3D localization accuracy, or tracking quality.
+
 ## Unitree L2 official indoor sample
 
 The [official L2 sample](https://www.unitree.com/download/L2/) contains
