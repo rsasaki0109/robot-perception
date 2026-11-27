@@ -1,0 +1,108 @@
+{
+  "sequence": "GrandTour ETH-2",
+  "camera": "alphasense_front_center",
+  "depth_camera": "depth_camera_front_upper",
+  "annotation": "AI visual review of raw camera images without detector overlays",
+  "image_size_px": [
+    480,
+    360
+  ],
+  "roi_xyxy_px": [
+    20,
+    0,
+    460,
+    295
+  ],
+  "frames": {
+    "2480": {
+      "camera_frame": 2481,
+      "persons": [
+        [
+          326,
+          81,
+          356,
+          182
+        ]
+      ],
+      "ignore": [
+        [
+          415,
+          130,
+          462,
+          181
+        ]
+      ],
+      "depth_frame": 3719,
+      "depth_minus_camera_ms": -11.73,
+      "range_reference": [
+        {
+          "band": "4–6 m",
+          "samples": 2781,
+          "range_m": 4.892,
+          "iqr_m": 0.12
+        }
+      ]
+    },
+    "2500": {
+      "camera_frame": 2501,
+      "persons": [
+        [
+          410,
+          65,
+          454,
+          217
+        ]
+      ],
+      "ignore": [
+        [
+          264,
+          110,
+          303,
+          155
+        ]
+      ],
+      "depth_frame": 3749,
+      "depth_minus_camera_ms": -11.28,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "2520": {
+      "camera_frame": 2521,
+      "persons": [
+        [
+          249,
+          98,
+          283,
+          151
+        ],
+        [
+          321,
+          110,
+          350,
+          155
+        ]
+      ],
+      "ignore": [],
+      "depth_frame": 3779,
+      "depth_minus_camera_ms": -11.27,
+      "range_reference": [
+        {
+          "band": "4–6 m",
+          "samples": 1163,
+          "range_m": 5.967,
+          "iqr_m": 0.263
+        },
+        {
+          "band": "outside_common_crop",
+          "samples": 1084,
+          "range_m": 8.393,
+          "iqr_m": 0.489
+        }
+      ]
+    }
+  }
+}

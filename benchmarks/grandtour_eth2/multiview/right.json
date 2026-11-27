@@ -1,0 +1,782 @@
+{
+  "sequence": "GrandTour ETH-2",
+  "camera": "alphasense_right",
+  "depth_camera": "depth_camera_right",
+  "annotation": "AI visual review of raw camera images without detector overlays",
+  "image_size_px": [
+    480,
+    360
+  ],
+  "roi_xyxy_px": [
+    20,
+    0,
+    460,
+    295
+  ],
+  "frames": {
+    "3420": {
+      "persons": [
+        [
+          150,
+          91,
+          205,
+          197
+        ]
+      ],
+      "ignore": [],
+      "camera_frame": 3421,
+      "depth_frame": 5130,
+      "depth_minus_camera_ms": -0.05,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3440": {
+      "persons": [
+        [
+          120,
+          89,
+          154,
+          183
+        ],
+        [
+          175,
+          91,
+          205,
+          182
+        ],
+        [
+          358,
+          87,
+          401,
+          192
+        ]
+      ],
+      "ignore": [],
+      "camera_frame": 3441,
+      "depth_frame": 5160,
+      "depth_minus_camera_ms": 0.96,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3460": {
+      "persons": [
+        [
+          134,
+          60,
+          194,
+          227
+        ],
+        [
+          250,
+          66,
+          296,
+          201
+        ]
+      ],
+      "ignore": [
+        [
+          451,
+          88,
+          480,
+          199
+        ]
+      ],
+      "camera_frame": 3461,
+      "depth_frame": 5190,
+      "depth_minus_camera_ms": -0.03,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3700": {
+      "persons": [
+        [
+          31,
+          76,
+          84,
+          199
+        ],
+        [
+          109,
+          64,
+          151,
+          194
+        ],
+        [
+          154,
+          63,
+          200,
+          200
+        ],
+        [
+          198,
+          56,
+          242,
+          211
+        ],
+        [
+          261,
+          75,
+          313,
+          197
+        ],
+        [
+          313,
+          40,
+          394,
+          228
+        ],
+        [
+          390,
+          63,
+          456,
+          225
+        ]
+      ],
+      "ignore": [
+        [
+          434,
+          78,
+          480,
+          229
+        ]
+      ],
+      "camera_frame": 3701,
+      "depth_frame": 5550,
+      "depth_minus_camera_ms": 2.07,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3740": {
+      "persons": [
+        [
+          94,
+          89,
+          129,
+          189
+        ],
+        [
+          122,
+          88,
+          155,
+          194
+        ],
+        [
+          143,
+          66,
+          202,
+          203
+        ],
+        [
+          257,
+          76,
+          293,
+          195
+        ],
+        [
+          297,
+          64,
+          365,
+          220
+        ],
+        [
+          342,
+          47,
+          389,
+          218
+        ],
+        [
+          378,
+          56,
+          425,
+          216
+        ],
+        [
+          414,
+          56,
+          468,
+          235
+        ]
+      ],
+      "ignore": [
+        [
+          27,
+          108,
+          70,
+          196
+        ],
+        [
+          228,
+          87,
+          263,
+          190
+        ]
+      ],
+      "camera_frame": 3741,
+      "depth_frame": 5610,
+      "depth_minus_camera_ms": 3.09,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3780": {
+      "persons": [
+        [
+          80,
+          84,
+          108,
+          198
+        ],
+        [
+          107,
+          65,
+          157,
+          215
+        ],
+        [
+          179,
+          69,
+          229,
+          213
+        ],
+        [
+          256,
+          83,
+          296,
+          202
+        ],
+        [
+          302,
+          53,
+          359,
+          212
+        ],
+        [
+          371,
+          41,
+          444,
+          256
+        ]
+      ],
+      "ignore": [
+        [
+          40,
+          102,
+          64,
+          189
+        ],
+        [
+          152,
+          92,
+          177,
+          186
+        ],
+        [
+          170,
+          91,
+          198,
+          196
+        ],
+        [
+          436,
+          76,
+          480,
+          245
+        ]
+      ],
+      "camera_frame": 3781,
+      "depth_frame": 5670,
+      "depth_minus_camera_ms": 3.1,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3820": {
+      "persons": [
+        [
+          63,
+          61,
+          121,
+          210
+        ],
+        [
+          173,
+          43,
+          243,
+          215
+        ],
+        [
+          345,
+          63,
+          401,
+          206
+        ],
+        [
+          410,
+          62,
+          455,
+          202
+        ]
+      ],
+      "ignore": [
+        [
+          14,
+          97,
+          56,
+          201
+        ],
+        [
+          165,
+          82,
+          197,
+          182
+        ],
+        [
+          240,
+          81,
+          283,
+          203
+        ]
+      ],
+      "camera_frame": 3821,
+      "depth_frame": 5730,
+      "depth_minus_camera_ms": 3.12,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3860": {
+      "persons": [
+        [
+          79,
+          62,
+          119,
+          178
+        ],
+        [
+          150,
+          37,
+          208,
+          177
+        ],
+        [
+          232,
+          55,
+          272,
+          169
+        ],
+        [
+          368,
+          57,
+          420,
+          177
+        ]
+      ],
+      "ignore": [
+        [
+          15,
+          64,
+          78,
+          180
+        ],
+        [
+          438,
+          66,
+          472,
+          177
+        ]
+      ],
+      "camera_frame": 3861,
+      "depth_frame": 5790,
+      "depth_minus_camera_ms": 24.1,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "3900": {
+      "persons": [
+        [
+          40,
+          41,
+          106,
+          181
+        ],
+        [
+          153,
+          42,
+          209,
+          174
+        ],
+        [
+          220,
+          67,
+          271,
+          172
+        ],
+        [
+          291,
+          43,
+          344,
+          173
+        ],
+        [
+          400,
+          38,
+          454,
+          176
+        ]
+      ],
+      "ignore": [
+        [
+          81,
+          74,
+          114,
+          177
+        ]
+      ],
+      "camera_frame": 3901,
+      "depth_frame": 5850,
+      "depth_minus_camera_ms": 24.12,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "4200": {
+      "persons": [
+        [
+          101,
+          0,
+          163,
+          211
+        ],
+        [
+          159,
+          28,
+          224,
+          169
+        ],
+        [
+          224,
+          0,
+          306,
+          196
+        ],
+        [
+          288,
+          0,
+          375,
+          200
+        ],
+        [
+          379,
+          41,
+          416,
+          164
+        ],
+        [
+          421,
+          57,
+          465,
+          181
+        ]
+      ],
+      "ignore": [
+        [
+          35,
+          75,
+          75,
+          168
+        ],
+        [
+          78,
+          81,
+          111,
+          173
+        ]
+      ],
+      "camera_frame": 4201,
+      "depth_frame": 6300,
+      "depth_minus_camera_ms": 27.25,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "4220": {
+      "persons": [
+        [
+          223,
+          0,
+          308,
+          192
+        ],
+        [
+          295,
+          39,
+          355,
+          172
+        ],
+        [
+          383,
+          60,
+          422,
+          170
+        ]
+      ],
+      "ignore": [
+        [
+          47,
+          86,
+          81,
+          174
+        ],
+        [
+          435,
+          64,
+          467,
+          174
+        ]
+      ],
+      "camera_frame": 4221,
+      "depth_frame": 6330,
+      "depth_minus_camera_ms": 27.25,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    },
+    "4240": {
+      "persons": [
+        [
+          176,
+          40,
+          235,
+          169
+        ],
+        [
+          382,
+          51,
+          422,
+          173
+        ],
+        [
+          415,
+          65,
+          458,
+          178
+        ]
+      ],
+      "ignore": [
+        [
+          456,
+          76,
+          480,
+          179
+        ]
+      ],
+      "camera_frame": 4241,
+      "depth_frame": 6360,
+      "depth_minus_camera_ms": 27.26,
+      "range_reference": [
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        },
+        {
+          "band": "unknown",
+          "samples": 0
+        }
+      ]
+    }
+  }
+}

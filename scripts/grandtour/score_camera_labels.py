@@ -9,18 +9,28 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 import zarr
 
-from grandtour import Odometry
+from grandtour import Odometry, base_to_sensor
 
 
 def project_pixels(points, optical_from_base, intrinsics, distortion, scale):
     optical = points @ optical_from_base[:3, :3].T + optical_from_base[:3, 3]
     front = optical[:, 2] > 0
     xy = optical[front, :2] / optical[front, 2, None]
-    radius = np.linalg.norm(xy, axis=1)
-    theta = np.arctan(radius)
-    angle = theta * np.polynomial.polynomial.polyval(theta**2, [1, *distortion])
-    uv = xy * (angle / np.maximum(radius, 1e-12))[:, None]
+    uv = xy
+    if distortion is not None:
+        radius = np.linalg.norm(xy, axis=1)
+        theta = np.arctan(radius)
+        angle = theta * np.polynomial.polynomial.polyval(theta**2, [1, *distortion])
+        uv = xy * (angle / np.maximum(radius, 1e-12))[:, None]
     return (uv @ intrinsics[:2, :2].T + intrinsics[:2, 2]) * scale, front
+
+
+def distortion_for(info):
+    if info["distortion_model"] == "equidistant":
+        return info["D"]
+    if info["distortion_model"] == "plumb_bob" and not any(info["D"]):
+        return None
+    raise ValueError("expected equidistant or rectified pinhole intrinsics")
 
 
 def project(corners, optical_from_base, intrinsics, distortion, scale):
@@ -66,7 +76,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--labels", type=Path, required=True)
-    parser.add_argument("--setup", type=Path, required=True)
+    parser.add_argument("--setup", type=Path)
     parser.add_argument("--iou", type=float, default=0.30)
     parser.add_argument("batches", type=Path, nargs="+")
     args = parser.parse_args()
@@ -74,13 +84,19 @@ def main():
         parser.error("--iou must be in (0, 1]")
     annotation = json.loads(args.labels.read_text())
     frames = {int(index): frame for index, frame in annotation["frames"].items()}
-    open_setup = gzip.open if args.setup.suffix == ".gz" else open
-    with open_setup(args.setup, "rt") as stream:
-        setup = json.load(stream)
-    camera_from_base = np.linalg.inv(np.array(setup["camera_to_reference"]).reshape(4, 4))
     root = zarr.open_group(str(args.data), mode="r")
+    if args.setup:
+        if annotation["camera"] != "alphasense_front_center":
+            parser.error("--setup only describes the front-center camera")
+        open_setup = gzip.open if args.setup.suffix == ".gz" else open
+        with open_setup(args.setup, "rt") as stream:
+            setup = json.load(stream)
+        camera_from_base = np.linalg.inv(np.array(setup["camera_to_reference"]).reshape(4, 4))
+    else:
+        camera_from_base = base_to_sensor(root["tf"].attrs["tf"], annotation["camera"])
     camera = root[annotation["camera"]]
     info = camera.attrs["camera_info"]
+    distortion = distortion_for(info)
     intrinsics = np.array(info["K"]).reshape(3, 3)
     scale = np.array(annotation["image_size_px"]) / [info["width"], info["height"]]
     odometry = Odometry(root["anymal_state_odometry"])
@@ -93,7 +109,7 @@ def main():
             if batch["type"] != "lidar_batch" or batch["sequence"] not in frames:
                 continue
             index = batch["sequence"]
-            camera_time = float(camera["timestamp"][index])
+            camera_time = float(camera["timestamp"][frames[index].get("camera_frame", index)])
             scan_time = batch["event_time_ns"] * 1e-9
             transform = camera_from_base @ np.linalg.solve(
                 odometry.at(camera_time), odometry.at(scan_time)
@@ -104,7 +120,7 @@ def main():
                     continue
                 box = project(
                     np.array(detection["shape"]["corners"]).reshape(8, 3),
-                    transform, intrinsics, info["D"], scale,
+                    transform, intrinsics, distortion, scale,
                 )
                 if box is not None and contains(roi, (box[:2] + box[2:]) / 2):
                     predictions.append(box)

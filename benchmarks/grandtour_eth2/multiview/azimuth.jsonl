@@ -1,0 +1,12 @@
+{"range_m": 2, "z_m": 0.0, "rgb_bins": 272, "rear_depth_bins": 71, "union_bins": 343}
+{"range_m": 2, "z_m": 0.4, "rgb_bins": 272, "rear_depth_bins": 0, "union_bins": 272}
+{"range_m": 2, "z_m": 0.8, "rgb_bins": 273, "rear_depth_bins": 0, "union_bins": 273}
+{"range_m": 4, "z_m": 0.0, "rgb_bins": 280, "rear_depth_bins": 80, "union_bins": 359}
+{"range_m": 4, "z_m": 0.4, "rgb_bins": 280, "rear_depth_bins": 77, "union_bins": 357}
+{"range_m": 4, "z_m": 0.8, "rgb_bins": 280, "rear_depth_bins": 48, "union_bins": 328}
+{"range_m": 6, "z_m": 0.0, "rgb_bins": 284, "rear_depth_bins": 82, "union_bins": 360}
+{"range_m": 6, "z_m": 0.4, "rgb_bins": 283, "rear_depth_bins": 80, "union_bins": 360}
+{"range_m": 6, "z_m": 0.8, "rgb_bins": 283, "rear_depth_bins": 79, "union_bins": 359}
+{"range_m": 8, "z_m": 0.0, "rgb_bins": 285, "rear_depth_bins": 84, "union_bins": 360}
+{"range_m": 8, "z_m": 0.4, "rgb_bins": 284, "rear_depth_bins": 82, "union_bins": 360}
+{"range_m": 8, "z_m": 0.8, "rgb_bins": 284, "rear_depth_bins": 82, "union_bins": 360}

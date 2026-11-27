@@ -365,6 +365,63 @@ python scripts/grandtour/score_camera_labels.py --data /path/to/mission/data \
   --iou 0.30 eth2/paired/{mid360,xt32}-{cluster,centerpoint}.jsonl
 ```
 
+### ETH-2 multi-view and entrance-lobby evaluation
+
+The second review sampled both side cameras at LiDAR scans 3420, 3440, 3460,
+3700, 3740, 3780, 3820, 3860, 3900, 4200, 4220, and 4240. It added six
+front-camera frames at the early and late hallway blocks and three at
+2480, 2500, and 2520, in the entrance lobby of the same mission.
+The AI reviewer drew 103 person boxes across 33 camera images without
+detector overlays. Each camera is evaluated on its own. A person can
+appear in both views or in successive frames. Labels, ignored regions,
+nearest camera frame indices, and depth reference quality are
+[saved with the per-frame scores](../benchmarks/grandtour_eth2/multiview).
+
+| Review area | Frames | Labels | Mid-360 Cluster | XT32 Cluster | Mid-360 CenterPoint | XT32 CenterPoint |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hallway front, added blocks | 6 | 19 | 11 / 6 | 6 / 5 | 8 / 0 | 16 / 2 |
+| Hallway left | 12 | 28 | 3 / 21 | 3 / 25 | 8 / 4 | 11 / 2 |
+| Hallway right | 12 | 52 | 16 / 56 | 8 / 39 | 25 / 7 | 35 / 9 |
+| Entrance lobby front | 3 | 4 | 3 / 4 | 2 / 1 | 3 / 0 | 3 / 0 |
+
+Each detector cell is matched labels / unmatched predictions at IoU 0.30.
+At IoU 0.50, CenterPoint matched 7/19 versus 14/19 in the added hallway
+front blocks and 1/4 versus 2/4 in the lobby (Mid-360 versus XT32).
+XT32 CenterPoint also matched more boxes in both side views at both
+thresholds. The earlier front-camera result favoring Mid-360 at IoU 0.30
+did not repeat in the added hallway front blocks. The lobby sample is
+too small for a ranking. Side RGB remains suitable for 2D scoring, but
+79 of 80 side labels did not have a usable paired depth range and the
+remaining one was outside the common crop. No side range recall is reported.
+
+**Rear coverage.** The nearest rear D435i images were inspected at the 12
+side-camera scan times. The downward view and image truncation prevented
+reliable person annotation. These frames have no rear detection score.
+Using the calibrated camera models, the three RGB review regions cover
+280 of 360 one-degree azimuth bins at 4 m and base-frame z = 0.4 m.
+The union with the full rear depth image reaches 357 bins geometrically.
+At 2 m and the same height the union drops to 272 bins because the rear
+camera misses that height. This geometry models point visibility and
+does not account for invalid depth pixels or occlusions. A full-azimuth
+person-detection score remains unavailable for these recordings.
+
+For reproduction, unpack the corresponding camera metadata from the
+mission's `data/` archives and use the raw frames under `images/`.
+Use the existing paired detections for scans 3700–3900. For the additional
+scan blocks, generate same-format LiDAR batch records from the Mid-360
+Zarr timestamps with empty detections and matching empty truth records,
+run `pair_lidars.py`, and run the same four detector configurations.
+Score each saved view against the batch JSONL files that contain its scan
+IDs. The scores use the mission TF calibration, so omit `--setup` for
+the side cameras.
+
+```sh
+python scripts/grandtour/score_camera_labels.py --data /path/to/mission/data \
+  --labels benchmarks/grandtour_eth2/multiview/right.json --iou 0.30 \
+  eth2/multiview/{mid360,xt32}-{cluster,centerpoint}.jsonl
+python scripts/grandtour/camera_azimuth_coverage.py --data /path/to/mission/data
+```
+
 ## Unitree L2 official indoor sample
 
 The [official L2 sample](https://www.unitree.com/download/L2/) contains
